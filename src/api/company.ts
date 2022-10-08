@@ -2,15 +2,18 @@ import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
 import { companies } from "../../_sample-data/companies";
-
+import { store } from "../modules/store";
 
 export const companyRequest = async (req: IncomingMessage) => {
 
     switch (req.method) {
 
         case 'POST':
-            const postData = await getJSONDataFromRequestStream(req)
+            const postData: any = await getJSONDataFromRequestStream(req)
             console.log(postData);
+
+            store.postCompany({ ...postData })
+
             return "company successfully added"
 
         case 'PUT':
@@ -21,6 +24,8 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             console.log({ ...putData, ...putResult });
 
+            store.putCompany({ ...putData, ...putResult })
+
 
             return "company successfully updated"
 
@@ -29,12 +34,18 @@ export const companyRequest = async (req: IncomingMessage) => {
             const getResult = getPathParams(req.url as string, '/company/:id')
 
             if (!getResult?.id) {
-                return companies
-            } else {
-                console.log(getResult);
-                const company = _.find(companies, { id: Number(getResult.id) })
+                console.log(store.getCompanies());
 
-                return company
+                return store.getCompanies()
+
+                //return companies
+            } else {
+
+                return store.getCompany(getResult.id)
+
+                // const company = _.find(companies, { id: Number(getResult.id) })
+
+                // return company
             }
 
         default:

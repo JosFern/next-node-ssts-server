@@ -1,5 +1,6 @@
+
 export class account {
-    private readonly accountID: number
+    public readonly accountID: string
     private firstname: string
     private lastname: string
     private email: string
@@ -7,7 +8,7 @@ export class account {
     private role: string
 
     constructor(
-        accountID: number,
+        accountID: string,
         firstname: string,
         lastname: string,
         email: string,
@@ -21,5 +22,16 @@ export class account {
         this.email = email
         this.password = password
         this.role = role
+    }
+
+
+    updateAccount = (acc: object | any) => {
+
+        const { firstname, lastname, email, password } = acc
+
+        this.firstname = firstname
+        this.lastname = lastname
+        this.email = email
+        this.password = password
     }
 }

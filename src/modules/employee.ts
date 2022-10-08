@@ -3,28 +3,32 @@ import { absences } from "./absences"
 import { overtime } from "./overtime"
 import { store } from "./store"
 import _ from 'lodash'
+import { v4 as uuidv4 } from 'uuid';
 import { differenceInDays, differenceInHours, isSameMonth, parseISO } from "date-fns"
 import { company } from "./company"
 
 export class employee {
-    public readonly employeeID: number
-    public readonly accountID: number
-    public readonly employmentType: "partime" | "fulltime"
-    public readonly companyID: number
+    public readonly employeeID: string
+    public readonly accountID: string
+    public readonly companyID: string
+    public employmenttype: "partime" | "fulltime"
     private salaryperhour: number
+    private position: string
 
     constructor(
-        employeeID: number,
-        accountID: number,
+        employeeID: string,
+        accountID: string,
         salaryperhour: number,
-        employmentType: "partime" | "fulltime",
-        companyID: number
+        employmenttype: "partime" | "fulltime",
+        companyID: string,
+        position: string
     ) {
-        this.employeeID = employeeID
+        this.employeeID = employeeID === undefined ? uuidv4() : employeeID
         this.accountID = accountID
         this.salaryperhour = salaryperhour
-        this.employmentType = employmentType
+        this.employmenttype = employmenttype
         this.companyID = companyID
+        this.position = position
     }
 
     leaves: leave[] = []
@@ -35,13 +39,22 @@ export class employee {
         return this.salaryperhour
     }
 
-    getAssocCompany = (): company | any => _.find(store.companies, (comp) => comp.id === this.companyID)
+    getAssocCompany = (): company | any => _.find(store.getCompanies(), (comp) => comp.id === this.companyID)
+
+    updateEmployee = (salaryperhour: number, employmenttype: "partime" | "fulltime", position: string) => {
+        this.salaryperhour = salaryperhour
+        this.position = position
+        this.employmenttype = employmenttype
+    }
+
+
+    //-----------------------COMPUTATION METHODS BELOW-----------------------------
 
     getDailyWage = (): number => {
 
         let dailyWorkHours = 4;
 
-        if (this.employmentType === 'fulltime') dailyWorkHours = 8;
+        if (this.employmenttype === 'fulltime') dailyWorkHours = 8;
 
         return this.getSalaryPerHour() * dailyWorkHours
     }

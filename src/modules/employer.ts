@@ -1,11 +1,17 @@
-export class employer {
-    public readonly id: number;
-    public readonly accountID: number;
-    public readonly companyID: number;
+import { v4 as uuidv4 } from 'uuid';
 
-    constructor(id: number, accountID: number, companyID: number) {
-        this.id = id
+export class employer {
+    public readonly employerID: string;
+    public readonly accountID: string;
+    public companyID: string;
+
+    constructor(employerID: string, accountID: string, companyID: string) {
+        this.employerID = employerID === undefined ? uuidv4() : employerID
         this.accountID = accountID
+        this.companyID = companyID
+    }
+
+    updateCompany = (companyID: string) => {
         this.companyID = companyID
     }
 }

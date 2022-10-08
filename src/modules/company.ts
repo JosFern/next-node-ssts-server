@@ -1,11 +1,13 @@
+import { v4 as uuidv4 } from 'uuid';
+
 export class company {
-    public readonly id: number;
+    public readonly id: string;
     private name: string;
     private allotedleaves: number;
     private overtimelimit: number;
 
-    constructor(id: number, name: string, allotedleaves: number, overtimelimit: number) {
-        this.id = id
+    constructor(id: string, name: string, allotedleaves: number, overtimelimit: number) {
+        this.id = (id === undefined) ? uuidv4() : id
         this.name = name
         this.allotedleaves = allotedleaves
         this.overtimelimit = overtimelimit
@@ -21,5 +23,11 @@ export class company {
 
     getOvertimeLimit = () => {
         return this.overtimelimit
+    }
+
+    updateCompany = (name: string, allotedleaves: number, overtimelimit: number) => {
+        this.name = name
+        this.allotedleaves = allotedleaves
+        this.overtimelimit = overtimelimit
     }
 }

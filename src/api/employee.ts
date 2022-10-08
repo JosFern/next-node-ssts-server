@@ -1,6 +1,8 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
+import { store } from "../modules/store";
+import { v4 as uuidv4 } from 'uuid';
 import { employees } from "../../_sample-data/employees";
 
 
@@ -9,8 +11,15 @@ export const employeeRequest = async (req: IncomingMessage) => {
     switch (req.method) {
 
         case 'POST':
-            const postData = await getJSONDataFromRequestStream(req)
-            console.log(postData);
+            const postData: any = await getJSONDataFromRequestStream(req)
+
+            const { firstname, lastname, email, password } = postData
+
+            const id = uuidv4()
+
+            store.postAccount({ accountID: id, firstname, lastname, email, password, role: "employee" })
+
+            store.postEmployee({ ...postData, accountID: id })
 
             return "employee successfully added"
 
@@ -22,6 +31,7 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
             console.log({ ...putData, ...putResult });
 
+            store.putEmployee({ ...putData, ...putResult })
 
             return "employee successfully updated"
 
@@ -30,11 +40,14 @@ export const employeeRequest = async (req: IncomingMessage) => {
             const getResult = getPathParams(req.url as string, '/employer/:id')
 
             if (!getResult?.id) {
-                return employees
+                return store.getEmployees()
+                // return employees
             } else {
-                const employee = _.find(employees, { id: Number(getResult.id) })
 
-                return employee
+                return store.getEmployee(getResult.id)
+                // const employee = _.find(employees, { id: Number(getResult.id) })
+
+                // return employee
             }
 
         default:

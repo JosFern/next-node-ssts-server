@@ -3,6 +3,7 @@ import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
 import { computeDailyWage } from "../modules/computations";
 import { employees } from "../../_sample-data/employees";
+import { store } from "../modules/store";
 
 
 interface employee {
@@ -26,7 +27,10 @@ export const dailywageRequest = async (req: IncomingMessage) => {
 
             //FOR EMPLOYEE RETRIEVE DAILY WAGE
 
-            const employee: employee | any = _.find(employees, { id: Number(getResult.id) })
+            const employee: employee | any = _.find(store.getEmployees(), { employeeID: getResult.id })
+
+            console.log(employee);
+
 
             const dailywage = computeDailyWage(employee.salaryperhour, employee.employmenttype)
 

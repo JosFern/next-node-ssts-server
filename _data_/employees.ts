@@ -1,64 +1,82 @@
 
 interface employee {
-    id: number
+    accountID: string | undefined
     firstname: string
     lastname: string
     email: string
+    password: string
+    role: "employee"
+    employeeID: string | undefined
     salaryperhour: number
-    employmenttype: string
+    employmenttype: "parttime" | "fulltime"
     position: string
-    company: number
+    company: string | undefined
 }
 
 export const employees: employee[] = [
     {
-        id: 5,
+        accountID: undefined,
         firstname: "Rex",
         lastname: "Lapis",
         email: "morax@gmail.com",
+        password: "morax123",
+        role: "employee",
+        employeeID: undefined,
         salaryperhour: 10,
         employmenttype: "fulltime",
         position: "Geo Archon",
-        company: 1
+        company: undefined
     },
     {
-        id: 6,
+        accountID: undefined,
         firstname: "Xiao",
         lastname: "Alatus",
         email: "xiao@gmail.com",
+        password: "xiao123",
+        role: "employee",
+        employeeID: undefined,
         salaryperhour: 8,
         employmenttype: "fulltime",
         position: "Vigilant Yaksha",
-        company: 3
+        company: undefined
     },
     {
-        id: 7,
+        accountID: undefined,
         firstname: "Amber",
         lastname: "Teigrov",
         email: "amber@gmail.com",
+        password: "amber123",
+        role: "employee",
+        employeeID: undefined,
         salaryperhour: 4,
         employmenttype: "parttime",
         position: "Outrider",
-        company: 1
+        company: undefined
     },
     {
-        id: 8,
+        accountID: undefined,
         firstname: "Venti",
         lastname: "Barbatos",
         email: "venti@gmail.com",
+        password: "venti123",
+        role: "employee",
+        employeeID: undefined,
         salaryperhour: 4,
         employmenttype: "parttime",
         position: "Bard",
-        company: 1
+        company: undefined
     },
     {
-        id: 9,
+        accountID: undefined,
         firstname: "Aether",
         lastname: "Traveller",
         email: "aether@gmail.com",
+        password: "aether123",
+        role: "employee",
+        employeeID: undefined,
         salaryperhour: 15,
         employmenttype: "fulltime",
         position: "Traveller",
-        company: 2
+        company: undefined
     },
 ]

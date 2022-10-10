@@ -1,5 +1,6 @@
 import { createServer, IncomingMessage, ServerResponse, } from "http";
 import { absenceRequest } from "./api/absences";
+import { approvedenyLeaveRequest } from "./api/approvedenyleave";
 import { companyRequest } from "./api/company";
 import { dailywageRequest } from "./api/dailywage";
 import { employeeRequest } from "./api/employee";
@@ -32,6 +33,11 @@ const listener = async (req: IncomingMessage, res: ServerResponse) => {
         else if ((req.url as string).match('/employee/leave(.*?)')) {
 
             result = await leaveRequest(req) as string | object
+            console.log(JSON.stringify(result));
+        }
+        else if ((req.url as string).match('/employee/(.*?)/leave/(.*?)')) {
+
+            result = await approvedenyLeaveRequest(req) as string | object
             console.log(JSON.stringify(result));
         }
         else if ((req.url as string).match('/employee/overtime(.*?)')) {

@@ -6,45 +6,65 @@ import _ from 'lodash'
 import { v4 as uuidv4 } from 'uuid';
 import { differenceInDays, differenceInHours, isSameMonth, parseISO } from "date-fns"
 import { company } from "./company"
+import { account } from "./account"
 
-export class employee {
+export class employee extends account {
     public readonly employeeID: string
-    public readonly accountID: string
     public readonly companyID: string
-    public employmenttype: "partime" | "fulltime"
+    private employmenttype: "parttime" | "fulltime"
     private salaryperhour: number
     private position: string
 
     constructor(
-        employeeID: string,
-        accountID: string,
+        accountID: string | undefined,
+        firstname: string,
+        lastname: string,
+        email: string,
+        password: string,
+        role: string,
+        employeeID: string | undefined,
         salaryperhour: number,
-        employmenttype: "partime" | "fulltime",
+        employmenttype: "parttime" | "fulltime",
         companyID: string,
         position: string
     ) {
+        super(accountID, firstname, lastname, email, password, role)
         this.employeeID = employeeID === undefined ? uuidv4() : employeeID
-        this.accountID = accountID
         this.salaryperhour = salaryperhour
         this.employmenttype = employmenttype
         this.companyID = companyID
         this.position = position
     }
 
-    leaves: leave[] = []
-    absences: absences[] = []
-    overtimes: overtime[] = []
+    private leaves: leave[] = []
+    private absences: absences[] = []
+    private overtimes: overtime[] = []
 
-    getSalaryPerHour = (): number => {
-        return this.salaryperhour
-    }
+    getSalaryPerHour = (): number => this.salaryperhour
+
+    getEmploymentType = () => this.employmenttype
+
+    getPosition = () => this.position
 
     getAssocCompany = (): company | any => _.find(store.getCompanies(), (comp) => comp.id === this.companyID)
 
-    updateEmployee = (salaryperhour: number, employmenttype: "partime" | "fulltime", position: string) => {
+    updateEmployee = (salaryperhour: number, employmenttype: "parttime" | "fulltime", position: string) => {
         this.salaryperhour = salaryperhour
         this.position = position
         this.employmenttype = employmenttype
+    }
+
+    requestLeave = (leaveRequest: object | any) => {
+
+        const { datestart, dateend, reason, approved } = leaveRequest
+
+        const newLeave = new leave(datestart, dateend, reason, approved)
+
+        this.leaves.push(newLeave)
+    }
+
+    retrieveLeaves = () => {
+        return this.leaves
     }
 
 
@@ -55,6 +75,9 @@ export class employee {
         let dailyWorkHours = 4;
 
         if (this.employmenttype === 'fulltime') dailyWorkHours = 8;
+
+        console.log(this.getSalaryPerHour());
+
 
         return this.getSalaryPerHour() * dailyWorkHours
     }

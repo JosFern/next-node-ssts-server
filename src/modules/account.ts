@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 
 export class account {
     public readonly accountID: string
@@ -5,18 +6,17 @@ export class account {
     private lastname: string
     private email: string
     private password: string
-    private role: string
+    public readonly role: string
 
     constructor(
-        accountID: string,
+        accountID: string | undefined,
         firstname: string,
         lastname: string,
         email: string,
         password: string,
         role: string
     ) {
-
-        this.accountID = accountID
+        this.accountID = accountID === undefined ? uuidv4() : accountID
         this.firstname = firstname
         this.lastname = lastname
         this.email = email
@@ -24,11 +24,17 @@ export class account {
         this.role = role
     }
 
+    getFirstName = () => this.firstname
+
+    getLastName = () => this.lastname
+
+    getEmail = () => this.email
+
+    getPassword = () => this.password
 
     updateAccount = (acc: object | any) => {
 
         const { firstname, lastname, email, password } = acc
-
         this.firstname = firstname
         this.lastname = lastname
         this.email = email

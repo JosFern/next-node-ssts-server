@@ -48,9 +48,9 @@ export class store {
 
     static postCompany = (compInfo: object | any) => {
 
-        const { id, name, allotedleaves, overtimelimit } = compInfo
+        const { companyID, name, allotedleaves, overtimelimit } = compInfo
 
-        const newCompany = new company(id, name, allotedleaves, overtimelimit)
+        const newCompany = new company(companyID, name, allotedleaves, overtimelimit)
 
         store.companies.push(newCompany)
     }
@@ -65,14 +65,14 @@ export class store {
 
     }
 
-    static postEmployer = (emplyr: object | any) => {
+    // static postEmployer = (emplyr: object | any) => {
 
-        const { employerID, accountID, companyID } = emplyr
+    //     const { employerID, accountID, companyID } = emplyr
 
-        const newEmployer = new employer(employerID, accountID, companyID)
+    //     const newEmployer = new employer(employerID, accountID, companyID)
 
-        store.employers.push(newEmployer)
-    }
+    //     store.employers.push(newEmployer)
+    // }
 
     static postAccount = (acc: object | any) => {
 
@@ -93,25 +93,25 @@ export class store {
 
         const accIndex = _.findIndex(store.accounts, { accountID: emp.accountID })
 
-        store.accounts[accIndex].updateAccount({ firstname, lastname, email, password })
+        // store.accounts[accIndex].updateAccount({ firstname, lastname, email, password })
 
     }
 
-    static postEmployee = (emp: object | any) => {
+    // static postEmployee = (emp: object | any) => {
 
-        const { employeeID, accountID, companyID, salaryperhour, employmenttype, position } = emp
+    //     const { employeeID, accountID, companyID, salaryperhour, employmenttype, position } = emp
 
-        const newEmployee = new employee(
-            employeeID,
-            accountID,
-            salaryperhour,
-            employmenttype,
-            companyID,
-            position
-        )
+    //     const newEmployee = new employee(
+    //         employeeID,
+    //         accountID,
+    //         salaryperhour,
+    //         employmenttype,
+    //         companyID,
+    //         position
+    //     )
 
-        store.employees.push(newEmployee)
-    }
+    //     store.employees.push(newEmployee)
+    // }
 
     static putEmployee = (emp: object | any) => {
 
@@ -131,7 +131,23 @@ export class store {
 
         const accIndex = _.findIndex(store.accounts, { accountID: employee.accountID })
 
-        store.accounts[accIndex].updateAccount({ firstname, lastname, email, password })
+        // store.accounts[accIndex].updateAccount({ firstname, lastname, email, password })
+    }
+
+    static postLeave = (leave: object | any) => {
+
+        const { id } = leave
+
+        const emp: employee | any = _.find(store.employees, { employeeID: id })
+
+        emp.requestLeave({ ...leave })
+    }
+
+    static getEmployeeLeaves = (id: string) => {
+
+        const index = _.findIndex(store.employees, { employeeID: id })
+
+        return store.employees[index].retrieveLeaves()
     }
 
 }

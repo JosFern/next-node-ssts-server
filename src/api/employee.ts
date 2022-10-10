@@ -3,7 +3,6 @@ import { getJSONDataFromRequestStream, getPathParams } from "../util/generatePar
 import _ from 'lodash';
 import { store } from "../modules/store";
 import { v4 as uuidv4 } from 'uuid';
-import { employees } from "../../_sample-data/employees";
 
 
 export const employeeRequest = async (req: IncomingMessage) => {

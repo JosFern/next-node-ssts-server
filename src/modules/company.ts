@@ -6,7 +6,7 @@ export class company {
     private allotedleaves: number;
     private overtimelimit: number;
 
-    constructor(id: string, name: string, allotedleaves: number, overtimelimit: number) {
+    constructor(id: string | undefined, name: string, allotedleaves: number, overtimelimit: number) {
         this.id = (id === undefined) ? uuidv4() : id
         this.name = name
         this.allotedleaves = allotedleaves

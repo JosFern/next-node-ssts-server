@@ -150,4 +150,16 @@ export class store {
         return store.employees[index].retrieveLeaves()
     }
 
+    static loginAccount = (loginData: object | any) => {
+        const { email, password } = loginData
+
+        const account = _.find(store.accounts, (acc) => {
+            return acc.getEmail() === email && acc.getPassword === password
+        })
+
+        if (!account) return "email and password invalid"
+
+        return account
+    }
+
 }

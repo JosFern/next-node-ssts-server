@@ -1,40 +1,32 @@
 
 interface overtime {
-    id: number
-    empID: number
     datehappen: string
     timestart: string
     timeend: string
     reason: string
-    status: string
+    approved: boolean
 }
 
 export const overtimes: overtime[] = [
     {
-        id: 1,
-        empID: 5,
         datehappen: "2022-10-05T14:00:00+08:00",
         timestart: "2022-10-05T14:00:00+08:00",
         timeend: "2022-10-05T18:00:00+08:00",
         reason: "fox some bugs",
-        status: "pending"
+        approved: true
     },
     {
-        id: 2,
-        empID: 6,
         datehappen: "2022-10-06T14:00:00+08:00",
         timestart: "2022-10-06T14:00:00+08:00",
         timeend: "2022-10-06T18:00:00+08:00",
         reason: "maintenance",
-        status: "pending"
+        approved: false
     },
     {
-        id: 3,
-        empID: 5,
         datehappen: "2022-10-07T14:00:00+08:00",
         timestart: "2022-10-07T14:00:00+08:00",
         timeend: "2022-10-07T18:00:00+08:00",
         reason: "emergency",
-        status: "pending"
+        approved: true
     },
 ]

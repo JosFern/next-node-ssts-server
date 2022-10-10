@@ -1,4 +1,4 @@
-export class absences {
+export class absence {
     datestart: string
     dateend: string
 

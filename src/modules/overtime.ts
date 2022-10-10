@@ -3,7 +3,7 @@ export class overtime {
     public readonly timestart: string
     public readonly timeend: string
     public readonly reason: string
-    private approved: boolean
+    public approved: boolean
 
     constructor(datehappen: string, timestart: string, timeend: string, reason: string, approved: boolean) {
         this.datehappen = datehappen

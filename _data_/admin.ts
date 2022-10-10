@@ -1,20 +1,22 @@
-interface account {
+interface admin {
     accountID: string | undefined
     firstname: string
     lastname: string
     email: string
-    role: string
+    role: "admin"
     password: string
+    adminID: string | undefined
 }
 
-export const accounts: account[] = [
+export const admins: admin[] = [
     {
         accountID: undefined,
         firstname: "Marie",
         lastname: "Bulosan",
         email: "marie@gmail.com",
-        role: "employer",
-        password: "marie123",
+        role: "admin",
+        password: "123123123",
+        adminID: undefined,
     },
     {
         accountID: undefined,
@@ -22,22 +24,25 @@ export const accounts: account[] = [
         lastname: "Kamisato",
         email: "ayato@gmail.com",
         role: "admin",
-        password: "ayato123",
+        password: "123123123",
+        adminID: undefined,
     },
     {
         accountID: undefined,
         firstname: "John",
         lastname: "Doe",
         email: "john@gmail.com",
-        role: "employer",
-        password: "john123",
+        role: "admin",
+        password: "123123123",
+        adminID: undefined,
     },
     {
         accountID: undefined,
         firstname: "Ayaka",
         lastname: "Kamisato",
         email: "ayaka@gmail.com",
-        role: "employee",
-        password: "ayaka123",
+        role: "admin",
+        password: "123123123",
+        adminID: undefined,
     },
 ]

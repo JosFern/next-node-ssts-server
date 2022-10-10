@@ -1,5 +1,5 @@
 import { leave } from "./leaves"
-import { absences } from "./absences"
+import { absence } from "./absences"
 import { overtime } from "./overtime"
 import { store } from "./store"
 import _ from 'lodash'
@@ -37,7 +37,7 @@ export class employee extends account {
     }
 
     private leaves: leave[] = []
-    private absences: absences[] = []
+    private absences: absence[] = []
     private overtimes: overtime[] = []
 
     getSalaryPerHour = (): number => this.salaryperhour
@@ -45,6 +45,12 @@ export class employee extends account {
     getEmploymentType = () => this.employmenttype
 
     getPosition = () => this.position
+
+    postLeave = (leave: leave) => this.leaves.push(leave)
+
+    postAbsence = (absence: absence) => this.absences.push(absence)
+
+    postOvertime = (ot: overtime) => this.overtimes.push(ot)
 
     getAssocCompany = (): company | any => _.find(store.getCompanies(), (comp) => comp.id === this.companyID)
 
@@ -76,9 +82,6 @@ export class employee extends account {
 
         if (this.employmenttype === 'fulltime') dailyWorkHours = 8;
 
-        console.log(this.getSalaryPerHour());
-
-
         return this.getSalaryPerHour() * dailyWorkHours
     }
 
@@ -88,12 +91,12 @@ export class employee extends account {
 
         const assocCompany = this.getAssocCompany()
 
-        return Math.max(getLeaves, assocCompany?.getAllotedLeaves)
+        return Math.max(assocCompany?.getAllotedLeaves() - getLeaves, 0)
     }
 
     getTotalLeaves = (): number => {
         const getLeaves = _.chain(this.leaves)
-            .filter((leave) => isSameMonth(parseISO(leave.datestart), new Date()))
+            .filter((leave) => isSameMonth(parseISO(leave.datestart), new Date()) && leave.approved)
             .reduce((total, leave) =>
                 total += differenceInDays(parseISO(leave.dateend), parseISO(leave.datestart)) + 1,
                 0)
@@ -123,9 +126,9 @@ export class employee extends account {
     getTotalOvertime = (): number => {
 
         const getOvertimes = _.chain(this.overtimes)
-            .filter((ot) => isSameMonth(parseISO(ot.datehappen), new Date()))
+            .filter((ot) => isSameMonth(parseISO(ot.datehappen), new Date()) && ot.approved)
             .reduce((total, ot) =>
-                total += differenceInHours(parseISO(ot.timeend), parseISO(ot.timestart)) + 1,
+                total += differenceInHours(parseISO(ot.timeend), parseISO(ot.timestart)),
                 0)
             .value()
 
@@ -152,7 +155,7 @@ export class employee extends account {
 
         const monthSalary = (monthlyWage + (overtime + (this.salaryperhour * .2)) + bonusLeaveWages) - deductFromAbsences
 
-        return monthSalary
+        return Math.round(monthSalary)
     }
 
 

@@ -69,10 +69,20 @@ export class employee extends account {
         this.leaves.push(newLeave)
     }
 
-    retrieveLeaves = () => {
-        return this.leaves
+    requestOvertime = (otRequest: object | any) => {
+
+        const { datehappen, timestart, timeend, reason, approved } = otRequest
+
+        const newOT = new overtime(datehappen, timestart, timeend, reason, approved)
+
+        this.overtimes.push(newOT)
     }
 
+    retrieveLeaves = () => this.leaves
+
+    retrieveOvertimes = () => this.overtimes
+
+    retrieveAbsences = () => this.absences
 
     //-----------------------COMPUTATION METHODS BELOW-----------------------------
 

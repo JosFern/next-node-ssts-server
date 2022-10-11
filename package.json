@@ -5,7 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "dev": "ts-node-dev --respawn --pretty --transpile-only src/index.ts"
+    "dev": "ts-node-dev --respawn --pretty --transpile-only src/index.ts",
+    "table-employee": "ts-node src/tables/employee.ts",
+    "table-company": "ts-node src/tables/company.ts",
+    "table-account": "ts-node src/tables/account.ts",
+    "table-employer": "ts-node src/tables/employer.ts",
+    "table-leave": "ts-node src/tables/leave.ts",
+    "table-overtime": "ts-node src/tables/overtime.ts",
+    "table-absence": "ts-node src/tables/absence.ts",
+    "table-admin": "ts-node src/tables/admin.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +31,8 @@
     "uuid": "^9.0.0"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.186.0",
+    "@aws-sdk/lib-dynamodb": "^3.186.0",
     "date-fns": "^2.29.3",
     "lodash": "^4.17.21"
   }

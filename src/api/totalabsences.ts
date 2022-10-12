@@ -2,10 +2,10 @@ import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
 import { computeTotalAbsences, computeTotalLeaves } from "../modules/computations";
-import { companies } from "../../_sample-data/companies";
-import { employees } from "../../_sample-data/employees";
-import { leaves } from "../../_sample-data/leave";
-import { absences } from "../../_sample-data/absences";
+import { companies } from "../../_data_/companies";
+import { employees } from "../../_data_/employees";
+import { leaves } from "../../_data_/leave";
+import { absences } from "../../_data_/absences";
 
 interface employee {
     id: number
@@ -27,15 +27,16 @@ export const totalAbsencesRequest = async (req: IncomingMessage) => {
         case 'GET':
 
             //FOR EMPLOYEE RETRIEVE TOTAL ABSENCES
-            const getEmployee: employee | any = _.find(employees, { id: Number(getResult.id) })
+            // const getEmployee: employee | any = _.find(employees, { id: Number(getResult.id) })
 
-            const assocCompany: any = _.find(companies, { id: getEmployee.company })
+            // const assocCompany: any = _.find(companies, { id: getEmployee.company })
 
-            const totalLeaves = computeTotalLeaves(leaves, Number(getResult.id))
+            // const totalLeaves = computeTotalLeaves(leaves, Number(getResult.id))
 
-            const totalAbsence = computeTotalAbsences(absences, Number(getResult.id), assocCompany.allotedleaves, totalLeaves)
+            // const totalAbsence = computeTotalAbsences(absences, Number(getResult.id), assocCompany.allotedleaves, totalLeaves)
 
-            return { totalAbsence }
+            // return { totalAbsence }
+            return "total absences"
 
         default:
             break;

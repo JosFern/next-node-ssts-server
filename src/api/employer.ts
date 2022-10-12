@@ -1,11 +1,14 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
-import _ from 'lodash';
+import { find, map } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { employers } from "../../_sample-data/employers";
 import { store } from "../modules/store";
+import { employer } from "../modules/employer";
+import { deleteDB, selectDB } from "../lib/database/query";
 
 export const employerRequest = async (req: IncomingMessage) => {
+
+    const getResult = getPathParams(req.url as string, '/employer/:id')
 
     switch (req.method) {
 
@@ -13,15 +16,13 @@ export const employerRequest = async (req: IncomingMessage) => {
 
             const postData: any = await getJSONDataFromRequestStream(req)
 
-            const { firstname, lastname, email, password } = postData
+            const { firstname, lastname, email, password, companyID } = postData
 
             const id = uuidv4()
 
-            console.log({ ...postData, id, role: "employer" });
+            const newEmployer = new employer(id, firstname, lastname, email, password, "employer", undefined, companyID)
 
-            store.postAccount({ accountID: id, firstname, lastname, email, password, role: "employer" })
-
-            store.postEmployer({ ...postData, accountID: id })
+            newEmployer.insertEmployer()
 
             return "employer successfully added"
 
@@ -31,29 +32,62 @@ export const employerRequest = async (req: IncomingMessage) => {
 
             const putResult = getPathParams(req.url as string, '/employer/:id')
 
-            console.log({ ...putData, ...putResult });
+            const emplyr: object | any = await selectDB('Employer', `employerID='${putResult.id}'`)
 
-            store.putEmployer({ ...putData, ...putResult })
+            const putModel = new employer(
+                emplyr[0]?.accountID,   //accountID
+                putData.firstname,      //firstname
+                putData.lastname,       //lastname
+                putData.email,          //email
+                putData.password,       //password
+                "employer",             //employer
+                putResult.id,           //employerID
+                putData.companyID       //companyID
+            )
+
+            if (putData.companyID !== emplyr[0]?.companyID) putModel.updateEmployerCompany()
+
+            putModel.updateAccount(putData.origEmail)
 
             return "employer successfully updated"
 
 
         case 'GET':
-            const getResult = getPathParams(req.url as string, '/employer/:id')
 
             if (!getResult?.id) {
 
-                return store.getEmployers()
+                const employers = await selectDB('Employer')
 
-                // return employers
+                const accounts = await selectDB('Account')
+
+                const employersInfo = map(employers, (emp) => {
+                    const accInfo = find(accounts, { accountID: emp.accountID })
+                    return { ...emp, ...accInfo }
+                })
+
+                return employersInfo
+
             } else {
 
-                return store.getEmployer(getResult.id)
+                const employer: object | any = await selectDB('Employer', `employerID='${getResult?.id}'`)
+                console.log(employer);
 
-                // const employer = _.find(employers, { id: Number(getResult.id) })
 
-                // return employer
+                const account = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
+
+                return { ...employer[0], ...account[0] }
             }
+
+        case 'DELETE':
+
+            const emp: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
+
+            const acc: object | any = await selectDB('Account', `accountID='${emp[0]?.accountID}'`)
+
+            deleteDB("Account", acc[0].accountID, "accountID", "email", acc[0].email)
+            deleteDB('Employer', getResult.id, "employerID", "accountID", acc[0].accountID)
+
+            return "employer successfully deleted"
 
         default:
             break;

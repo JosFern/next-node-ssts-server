@@ -1,24 +1,27 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
-import _ from 'lodash';
-import { store } from "../modules/store";
+import _, { find, map } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+import { employee } from "../modules/employee";
+import { deleteDB, selectDB } from "../lib/database/query";
 
 
 export const employeeRequest = async (req: IncomingMessage) => {
+
+    const getResult = getPathParams(req.url as string, '/employee/:id')
 
     switch (req.method) {
 
         case 'POST':
             const postData: any = await getJSONDataFromRequestStream(req)
 
-            const { firstname, lastname, email, password } = postData
+            const { firstname, lastname, email, password, salaryperhour, employmenttype, companyID, position } = postData
 
             const id = uuidv4()
 
-            store.postAccount({ accountID: id, firstname, lastname, email, password, role: "employee" })
+            const newEmployer = new employee(id, firstname, lastname, email, password, "employee", undefined, salaryperhour, employmenttype, companyID, position)
 
-            store.postEmployee({ ...postData, accountID: id })
+            newEmployer.insertEmployee()
 
             return "employee successfully added"
 
@@ -26,28 +29,63 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
             const putData: any = await getJSONDataFromRequestStream(req)
 
-            const putResult = getPathParams(req.url as string, '/employee/:id')
+            const emplye: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            console.log({ ...putData, ...putResult });
+            const putModel = new employee(
+                emplye[0]?.accountID,   //accountID
+                putData.firstname,      //firstname
+                putData.lastname,       //lastname
+                putData.email,          //email
+                putData.password,       //password
+                "employee",             //employee
+                getResult.id,           //employeeID
+                putData.salaryperhour,  //salaryperhour
+                putData.employmenttype, //type
+                putData.companyID,      //companyID
+                putData.position,       //position
+            )
 
-            store.putEmployee({ ...putData, ...putResult })
+            putModel.updateEmployee()
+
+            putModel.updateAccount(putData.origEmail)
 
             return "employee successfully updated"
 
 
         case 'GET':
-            const getResult = getPathParams(req.url as string, '/employer/:id')
 
             if (!getResult?.id) {
-                return store.getEmployees()
-                // return employees
+
+                const employees = await selectDB('Employee')
+
+                const accounts = await selectDB('Account')
+
+                const employersInfo = map(employees, (emp) => {
+                    const accInfo = find(accounts, { accountID: emp.accountID })
+                    return { ...emp, ...accInfo }
+                })
+
+                return employersInfo
+
             } else {
 
-                return store.getEmployee(getResult.id)
-                // const employee = _.find(employees, { id: Number(getResult.id) })
+                const employee: object | any = await selectDB('Employee', `employeeID='${getResult?.id}'`)
 
-                // return employee
+                const account = await selectDB('Account', `accountID='${employee[0]?.accountID}'`)
+
+                return { ...employee[0], ...account[0] }
             }
+
+        case 'DELETE':
+
+            const emp: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+
+            const acc: object | any = await selectDB('Account', `accountID='${emp[0]?.accountID}'`)
+
+            deleteDB("Account", acc[0].accountID, "accountID", "email", acc[0].email)
+            deleteDB('Employee', getResult.id, "employeeID", "accountID", acc[0].accountID)
+
+            return "employee successfully deleted"
 
         default:
             break;

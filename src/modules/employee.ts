@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { differenceInDays, differenceInHours, isSameMonth, parseISO } from "date-fns"
 import { company } from "./company"
 import { account } from "./account"
+import { insertDB, updateDB } from "../lib/database/query"
 
 export class employee extends account {
     public readonly employeeID: string
@@ -54,10 +55,47 @@ export class employee extends account {
 
     getAssocCompany = (): company | any => _.find(store.getCompanies(), (comp) => comp.id === this.companyID)
 
-    updateEmployee = (salaryperhour: number, employmenttype: "parttime" | "fulltime", position: string) => {
-        this.salaryperhour = salaryperhour
-        this.position = position
-        this.employmenttype = employmenttype
+    // updateEmployee = (salaryperhour: number, employmenttype: "parttime" | "fulltime", position: string) => {
+    //     this.salaryperhour = salaryperhour
+    //     this.position = position
+    //     this.employmenttype = employmenttype
+    // }
+
+    insertEmployee = async () => {
+        const employeeStringFormat = "{ 'employeeID': ?, 'accountID': ?, 'salaryperhour': ?, 'employmenttype': ?, 'companyID': ?, 'position': ? }"
+        const employeeParams = [
+            { S: this.employeeID },
+            { S: this.accountID },
+            { N: `${this.salaryperhour}` },
+            { S: this.employmenttype },
+            { S: this.companyID },
+            { S: this.position },
+        ]
+
+        const accountStringFormat = "{ 'accountID': ?, 'email': ?, 'firstname': ?, 'lastname': ?, 'password': ?, 'role': ?}"
+        const accountParams = [
+            { S: this.accountID },
+            { S: this.getEmail() },
+            { S: this.getFirstName() },
+            { S: this.getLastName() },
+            { S: this.getPassword() },
+            { S: this.role },
+        ]
+
+        try {
+            await insertDB("Employee", employeeStringFormat, employeeParams)
+            await insertDB("Account", accountStringFormat, accountParams)
+        } catch (err) {
+            console.error(err)
+            throw new Error("Unable to save");
+        }
+    }
+
+    updateEmployee = async () => {
+
+        const stringFormat = ` salaryperhour='${this.salaryperhour}' , employmenttype='${this.employmenttype}' , position='${this.position}' `
+
+        updateDB('Employee', stringFormat, this.employeeID, "employeeID", "accountID", this.accountID)
     }
 
     requestLeave = (leaveRequest: object | any) => {

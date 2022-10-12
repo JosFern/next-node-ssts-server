@@ -1,54 +1,80 @@
 import { IncomingMessage } from "http";
-import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
+import { getJSONDataFromRequestStream, getPathParams, getQueryParams } from "../util/generateParams";
 import _ from 'lodash';
-import { companies } from "../../_sample-data/companies";
 import { store } from "../modules/store";
+import { company } from "../modules/company";
+import { deleteDB, selectDB } from "../lib/database/query";
+
+interface companyData {
+    name: string
+    allotedleaves: number
+    overtimelimit: number
+    origName: string
+}
 
 export const companyRequest = async (req: IncomingMessage) => {
+    try {
 
-    switch (req.method) {
+        switch (req.method) {
 
-        case 'POST':
-            const postData: any = await getJSONDataFromRequestStream(req)
-            console.log(postData);
+            case 'POST':
+                const postData: companyData | any = await getJSONDataFromRequestStream(req)
+                console.log(postData);
 
-            store.postCompany({ ...postData })
+                const { name, allotedleaves, overtimelimit } = postData
 
-            return "company successfully added"
+                const postModel = new company(undefined, name, allotedleaves, overtimelimit)
 
-        case 'PUT':
+                postModel.insertCompany()
 
-            const putData: any = await getJSONDataFromRequestStream(req)
+                return "company successfully added"
 
-            const putResult = getPathParams(req.url as string, '/company/:id')
+            case 'PUT':
 
-            console.log({ ...putData, ...putResult });
+                const putData: companyData | any = await getJSONDataFromRequestStream(req)
 
-            store.putCompany({ ...putData, ...putResult })
+                const putResult = getPathParams(req.url as string, '/company/:id')
+
+                const putModel = new company(putResult.id, putData.name, putData.allotedleaves, putData.overtimelimit)
+
+                putModel.updateCompany(putData.origName)
+
+                return "company successfully updated"
 
 
-            return "company successfully updated"
+            case 'GET':
+                const getResult = getPathParams(req.url as string, '/company/:id')
+
+                if (!getResult?.id) {
+
+                    const listing = await selectDB('Company')
+
+                    return listing
+
+                } else {
+
+                    const statement = `id='${getResult?.id}'`
+
+                    const comp = await selectDB('Company', statement)
+
+                    return comp[0]
+                }
+
+            case 'DELETE':
+
+                // const deleteResult = getPathParams(req.url as string, '/company/:id')
+
+                // deleteDB("Company", deleteResult.id, "id", "name", or)
+
+                return "company successfully deleted"
 
 
-        case 'GET':
-            const getResult = getPathParams(req.url as string, '/company/:id')
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
 
-            if (!getResult?.id) {
-                console.log(store.getCompanies());
-
-                return store.getCompanies()
-
-                //return companies
-            } else {
-
-                return store.getCompany(getResult.id)
-
-                // const company = _.find(companies, { id: Number(getResult.id) })
-
-                // return company
-            }
-
-        default:
-            break;
     }
+
 }

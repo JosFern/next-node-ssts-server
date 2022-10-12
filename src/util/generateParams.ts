@@ -16,14 +16,10 @@ interface paramsInput {
     [key: string]: string
 }
 export const getPathParams = (url: string, path: string) => {
-    console.log(url);
-    console.log(path);
 
     const explodeURL = url.split('/')
-    console.log(explodeURL);
 
     const explodePath = path.split('/')
-    console.log(explodePath);
     const params: paramsInput = {}
     each(explodePath, (resources, index) => {
         const pathParam = resources.match(/:(\w.*)/)

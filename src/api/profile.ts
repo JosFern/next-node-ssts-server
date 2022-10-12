@@ -1,7 +1,7 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { accounts } from "../../_sample-data/accounts";
+import { accounts } from "../../_data_/accounts";
 
 
 export const accountRequest = async (req: IncomingMessage) => {

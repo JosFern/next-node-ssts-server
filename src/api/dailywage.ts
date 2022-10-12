@@ -1,8 +1,7 @@
 import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { computeDailyWage } from "../modules/computations";
-import { employees } from "../../_sample-data/employees";
+import { employees } from "../../_data_/employees";
 import { store } from "../modules/store";
 
 
@@ -32,11 +31,11 @@ export const dailywageRequest = async (req: IncomingMessage) => {
             console.log(employee);
 
 
-            const dailywage = computeDailyWage(employee.salaryperhour, employee.employmenttype)
+            // const dailywage = computeDailyWage(employee.salaryperhour, employee.employmenttype)
 
             console.log(employee);
 
-            return { dailywage }
+            return "daily wage"
 
         default:
             break;

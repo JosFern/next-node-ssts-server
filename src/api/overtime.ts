@@ -1,7 +1,7 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { overtimes } from "../../_sample-data/overtime";
+import { overtimes } from "../../_data_/overtime";
 
 
 export const overtimeRequest = async (req: IncomingMessage) => {

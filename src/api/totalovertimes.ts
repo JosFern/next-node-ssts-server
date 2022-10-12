@@ -1,10 +1,10 @@
 import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { companies } from "../../_sample-data/companies";
+import { companies } from "../../_data_/companies";
 import { computeTotalOvertime } from "../modules/computations";
-import { employees } from "../../_sample-data/employees";
-import { overtimes } from "../../_sample-data/overtime";
+import { employees } from "../../_data_/employees";
+import { overtimes } from "../../_data_/overtime";
 
 interface employee {
     id: number
@@ -28,15 +28,17 @@ export const totalOTRequest = async (req: IncomingMessage) => {
 
             //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
 
-            const employee: employee | any = _.find(employees, { id: Number(getResult.id) })
+            // const employee: employee | any = _.find(employees, { id: Number(getResult.id) })
 
-            const assocCompany: any = _.find(companies, { id: employee.company })
+            // const assocCompany: any = _.find(companies, { id: employee.company })
 
-            const totalOT = computeTotalOvertime(overtimes, Number(getResult.id), assocCompany.overtimelimit)
+            // const totalOT = computeTotalOvertime(overtimes, Number(getResult.id), assocCompany.overtimelimit)
 
-            console.log(totalOT);
+            // console.log(totalOT);
 
-            return { totalOT }
+            // return { totalOT }
+
+            return "total overtime"
 
 
 

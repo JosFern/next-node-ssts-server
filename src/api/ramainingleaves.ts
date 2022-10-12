@@ -1,10 +1,10 @@
 import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { leaves } from "../../_sample-data/leave";
+import { leaves } from "../../_data_/leave";
 import { computeRemainingLeaves } from "../modules/computations";
-import { companies } from "../../_sample-data/companies";
-import { employees } from "../../_sample-data/employees";
+import { companies } from "../../_data_/companies";
+import { employees } from "../../_data_/employees";
 
 interface employee {
     id: number
@@ -26,13 +26,14 @@ export const remainingleave = async (req: IncomingMessage) => {
         case 'GET':
 
             //FOR EMPLOYEE RETRIEVE REMAINING LEAVES
-            const getEmployee: employee | any = _.find(employees, { id: Number(getResult.id) })
+            // const getEmployee: employee | any = _.find(employees, { id: Number(getResult.id) })
 
-            const assocCompany: any = _.find(companies, { id: getEmployee.company })
+            // const assocCompany: any = _.find(companies, { id: getEmployee.company })
 
-            const remainingleaves = computeRemainingLeaves(leaves, Number(getResult.id), assocCompany.allotedleaves)
+            // const remainingleaves = computeRemainingLeaves(leaves, Number(getResult.id), assocCompany.allotedleaves)
 
-            return { remainingleaves }
+            // return { remainingleaves }
+            return "remaining leaves"
 
         default:
             break;

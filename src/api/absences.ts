@@ -1,8 +1,8 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { absences } from "../../_data_/absences";
 import { absence } from "../modules/absences";
+import { selectDB } from "../lib/database/query";
 
 
 export const absenceRequest = async (req: IncomingMessage) => {
@@ -17,7 +17,7 @@ export const absenceRequest = async (req: IncomingMessage) => {
 
             const postData: any = await getJSONDataFromRequestStream(req)
 
-            const postModel = new absence(postData.datestart, postData.dateend, getResult.id)
+            const postModel = new absence(undefined, postData.datestart, postData.dateend, getResult.id)
 
             postModel.insertAbsence()
 
@@ -27,13 +27,9 @@ export const absenceRequest = async (req: IncomingMessage) => {
 
             //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE ABSENCES
 
-            const employee = _.filter(absences, { empID: Number(getResult.id) })
+            const absences = selectDB('Absence', `employeeID='${getResult.id}'`)
 
-            console.log(employee);
-
-            return employee
-
-
+            return absences
 
         default:
             break;

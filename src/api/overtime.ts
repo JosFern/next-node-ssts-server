@@ -1,7 +1,8 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { overtimes } from "../../_data_/overtime";
+import { overtime } from "../modules/overtime";
+import { selectDB, updateDB } from "../lib/database/query";
 
 
 export const overtimeRequest = async (req: IncomingMessage) => {
@@ -13,9 +14,19 @@ export const overtimeRequest = async (req: IncomingMessage) => {
         case 'POST':
             // FOR EMPLOYEE REQUESTING AN OVERTIME
 
-            const postData = await getJSONDataFromRequestStream(req)
+            const postData: any = await getJSONDataFromRequestStream(req)
 
-            console.log(postData);
+            const newOT = new overtime(
+                undefined,
+                postData.datehappen,
+                postData.timestart,
+                postData.timeend,
+                postData.reason,
+                postData.approved,
+                getResult.id
+            )
+
+            newOT.insertOvertime()
 
             return "overtime request sent"
 
@@ -23,26 +34,22 @@ export const overtimeRequest = async (req: IncomingMessage) => {
 
             // FOR EMPLOYER TO APPROVE/DENY OVERTIME REQUEST
 
-            const putData: any = await getJSONDataFromRequestStream(req)
+            const putData: object | any = await getJSONDataFromRequestStream(req)
 
-            console.log({ ...putData, ...getResult });
+            const stringFormat = ` approved=${putData.approved ? 1 : 0} `
 
-            const status: string = putData.isApproved ? "Overtime Approved" : "Overtime Denied"
+            updateDB('Overtime', stringFormat, getResult.id, "id")
 
-            return status
+            return putData.approved ? "overtime approved" : "overtime denied"
 
 
         case 'GET':
 
             //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
 
-            const employee = _.filter(overtimes, { empID: Number(getResult.id) })
+            const overtimes = selectDB('Overtime', `employeeID='${getResult.id}'`)
 
-            console.log(employee);
-
-            return employee
-
-
+            return overtimes
 
         default:
             break;

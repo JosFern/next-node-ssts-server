@@ -3,18 +3,8 @@ import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
 import { employees } from "../../_data_/employees";
 import { store } from "../modules/store";
-
-
-interface employee {
-    id: number
-    firstname: string
-    lastname: string
-    email: string
-    salaryperhour: number
-    employmenttype: string
-    position: string
-    company: number
-}
+import { selectDB } from "../lib/database/query";
+import { employee } from "../modules/employee";
 
 export const dailywageRequest = async (req: IncomingMessage) => {
 
@@ -26,16 +16,29 @@ export const dailywageRequest = async (req: IncomingMessage) => {
 
             //FOR EMPLOYEE RETRIEVE DAILY WAGE
 
-            const employee: employee | any = _.find(store.getEmployees(), { employeeID: getResult.id })
+            const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            console.log(employee);
+            const getAccount: any = await selectDB('Account', `accountID='${getEmployee[0].accountID}'`)
 
+            const acc = getAccount[0]
 
-            // const dailywage = computeDailyWage(employee.salaryperhour, employee.employmenttype)
+            const model = new employee(
+                getEmployee[0].accountID,
+                acc.firstname,
+                acc.lastname,
+                acc.email,
+                acc.password,
+                acc.role,
+                getEmployee[0].employeeID,
+                getEmployee[0].salaryperhour,
+                getEmployee[0].employmenttype,
+                getEmployee[0].companyID,
+                getEmployee[0].position,
+            )
 
-            console.log(employee);
+            const dailywage = model.getDailyWage()
 
-            return "daily wage"
+            return { dailywage }
 
         default:
             break;

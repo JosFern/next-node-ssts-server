@@ -1,21 +1,9 @@
 import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
-import _ from 'lodash';
-import { leaves } from "../../_data_/leave";
-import { computeRemainingLeaves } from "../modules/computations";
-import { companies } from "../../_data_/companies";
-import { employees } from "../../_data_/employees";
-
-interface employee {
-    id: number
-    firstname: string
-    lastname: string
-    email: string
-    salaryperhour: number
-    employmenttype: string
-    position: string
-    company: number
-}
+import { map } from 'lodash';
+import { selectDB } from "../lib/database/query";
+import { employee } from "../modules/employee";
+import { leave } from "../modules/leaves";
 
 export const remainingleave = async (req: IncomingMessage) => {
 
@@ -26,14 +14,38 @@ export const remainingleave = async (req: IncomingMessage) => {
         case 'GET':
 
             //FOR EMPLOYEE RETRIEVE REMAINING LEAVES
-            // const getEmployee: employee | any = _.find(employees, { id: Number(getResult.id) })
 
-            // const assocCompany: any = _.find(companies, { id: getEmployee.company })
+            const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            // const remainingleaves = computeRemainingLeaves(leaves, Number(getResult.id), assocCompany.allotedleaves)
+            const getAccount: any = await selectDB('Account', `accountID='${getEmployee[0].accountID}'`)
 
-            // return { remainingleaves }
-            return "remaining leaves"
+            const leaves = selectDB('Leave', `employeeID='${getResult.id}'`)
+
+            const acc = getAccount[0]
+
+            const model = new employee(
+                getEmployee[0].accountID,
+                acc.firstname,
+                acc.lastname,
+                acc.email,
+                acc.password,
+                acc.role,
+                getEmployee[0].employeeID,
+                getEmployee[0].salaryperhour,
+                getEmployee[0].employmenttype,
+                getEmployee[0].companyID,
+                getEmployee[0].position,
+            )
+
+            const empLeaves = map(leaves, (lv: any) => {
+                return new leave(lv.id, lv.datestart, lv.dateend, lv.reason, lv.approved, lv.employeeID)
+            })
+
+            model.leaves = [...empLeaves]
+
+            const remainingLeaves = model.getRemainingLeaves()
+
+            return { remainingLeaves }
 
         default:
             break;

@@ -1,7 +1,8 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { accounts } from "../../_data_/accounts";
+import { account } from "../modules/account";
+import { selectDB } from "../lib/database/query";
 
 
 export const accountRequest = async (req: IncomingMessage) => {
@@ -10,20 +11,20 @@ export const accountRequest = async (req: IncomingMessage) => {
 
     switch (req.method) {
 
-        case 'POST':
-
-            const postData = await getJSONDataFromRequestStream(req)
-
-            console.log(postData);
-
-            return "account successfully added"
-
         case 'PUT':
 
             const putData: any = await getJSONDataFromRequestStream(req)
 
-            console.log({ ...putData, ...getResult });
+            const putAccount = new account(
+                getResult.id,
+                putData.firstname,
+                putData.lastname,
+                putData.email,
+                putData.password,
+                putData.role,
+            )
 
+            putAccount.updateAccount(putData.origEmail)
 
             return "profile successfully updated"
 
@@ -31,11 +32,11 @@ export const accountRequest = async (req: IncomingMessage) => {
         case 'GET':
 
             if (!getResult?.id) {
-                return accounts
+                const accs = selectDB('Account')
+                return accs
             } else {
-                const account = _.find(accounts, { id: Number(getResult.id) })
-
-                return account
+                const acc = selectDB('Account', `accountID='${getResult.id}'`)
+                return acc
             }
 
         default:

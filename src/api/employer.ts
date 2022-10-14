@@ -2,94 +2,126 @@ import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import { find, map } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { store } from "../modules/store";
 import { employer } from "../modules/employer";
 import { deleteDB, selectDB } from "../lib/database/query";
+import { account } from "../modules/account";
+
+interface returnMessage {
+    code: number
+    message: string | any
+}
 
 export const employerRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employer/:id')
+    try {
 
-    switch (req.method) {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-        case 'POST':
+        const getResult = getPathParams(req.url as string, '/employer/:id')
 
-            const postData: any = await getJSONDataFromRequestStream(req)
+        switch (req.method) {
 
-            const { firstname, lastname, email, password, companyID } = postData
+            case 'POST':
+                {
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-            const id = uuidv4()
+                    const { firstname, lastname, email, password, companyID } = data
 
-            const newEmployer = new employer(id, firstname, lastname, email, password, "employer", undefined, companyID)
+                    const statement = `email='${email}'`
 
-            newEmployer.insertEmployer()
+                    const isExist = await selectDB('Account', statement)
 
-            return "employer successfully added"
+                    if (isExist.length > 0) return { ...response, code: 409, message: "Email already exist" } as returnMessage
 
-        case 'PUT':
+                    const accountID = uuidv4()
 
-            const putData: any = await getJSONDataFromRequestStream(req)
+                    const newEmployer = new employer(undefined, accountID, companyID)
 
-            const putResult = getPathParams(req.url as string, '/employer/:id')
+                    await newEmployer.insertData()
 
-            const emplyr: object | any = await selectDB('Employer', `employerID='${putResult.id}'`)
+                    const newAccount = new account(accountID, firstname, lastname, email, password, "employer")
 
-            const putModel = new employer(
-                emplyr[0]?.accountID,   //accountID
-                putData.firstname,      //firstname
-                putData.lastname,       //lastname
-                putData.email,          //email
-                putData.password,       //password
-                "employer",             //employer
-                putResult.id,           //employerID
-                putData.companyID       //companyID
-            )
+                    await newAccount.insertData()
 
-            if (putData.companyID !== emplyr[0]?.companyID) putModel.updateEmployerCompany()
+                    response = { ...response, code: 201, message: "Employer successfully added" }
 
-            putModel.updateAccount(putData.origEmail)
+                    return response
+                }
 
-            return "employer successfully updated"
+            case 'PUT':
+                {
 
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-        case 'GET':
+                    const { firstname, lastname, email, password } = data
 
-            if (!getResult?.id) {
+                    const statement = `employerID='${getResult.id}'`
 
-                const employers = await selectDB('Employer')
+                    const empInfo: any = await selectDB("Employer", statement)
 
-                const accounts = await selectDB('Account')
+                    if (empInfo.length === 0) return { code: 404, message: "Employer not found" }
 
-                const employersInfo = map(employers, (emp) => {
-                    const accInfo = find(accounts, { accountID: emp.accountID })
-                    return { ...emp, ...accInfo }
-                })
+                    const model = new account(empInfo[0].accountID, firstname, lastname, email, password, "employer")
 
-                return employersInfo
+                    await model.updateData()
 
-            } else {
+                    response = { ...response, message: "Employer successfully updated" }
 
-                const employer: object | any = await selectDB('Employer', `employerID='${getResult?.id}'`)
-                console.log(employer);
+                    return response
+                }
 
+            case 'GET':
 
-                const account = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
+                if (!getResult?.id) {
 
-                return { ...employer[0], ...account[0] }
-            }
+                    const employers = await selectDB('Employer')
 
-        case 'DELETE':
+                    const accounts = await selectDB('Account')
 
-            const emp: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
+                    const employersInfo = map(employers, (emp) => {
+                        const accInfo = find(accounts, { accountID: emp.accountID })
+                        return { ...emp, ...accInfo }
+                    })
 
-            const acc: object | any = await selectDB('Account', `accountID='${emp[0]?.accountID}'`)
+                    response = { ...response, message: employersInfo }
 
-            deleteDB("Account", acc[0].accountID, "accountID", "email", acc[0].email)
-            deleteDB('Employer', getResult.id, "employerID", "accountID", acc[0].accountID)
+                    return response
 
-            return "employer successfully deleted"
+                } else {
 
-        default:
-            break;
+                    const employer: object | any = await selectDB('Employer', `employerID='${getResult?.id}'`)
+                    console.log(employer);
+
+                    if (employer.length === 0) return { code: 404, message: "Employer not found" }
+
+                    const account = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
+
+                    if (account.length === 0) return { code: 404, message: "Employer not found" }
+
+                    response = { ...response, message: { ...employer[0], ...account[0] } }
+
+                    return response
+                }
+
+            case 'DELETE':
+
+                const emp: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
+
+                const acc: object | any = await selectDB('Account', `accountID='${emp[0]?.accountID}'`)
+
+                deleteDB("Account", getResult.id, "accountID", "email", acc[0].email)
+                deleteDB('Employer', getResult.id, "employerID", "accountID", emp[0].accountID)
+
+                response = { ...response, message: "Employer successfully deleted" }
+
+                return response
+
+            default:
+                break;
+
+        }
+    } catch (err) {
+        console.log("error: " + err);
+
     }
 }

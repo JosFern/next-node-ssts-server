@@ -1,6 +1,5 @@
 import { createServer, IncomingMessage, ServerResponse, } from "http";
 import { absenceRequest } from "./api/absences";
-import { approvedenyLeaveRequest } from "./api/approvedenyleave";
 import { companyRequest } from "./api/company";
 import { dailywageRequest } from "./api/dailywage";
 import { employeeRequest } from "./api/employee";
@@ -13,10 +12,15 @@ import { remainingleave } from "./api/ramainingleaves";
 import { totalAbsencesRequest } from "./api/totalabsences";
 import { totalOTRequest } from "./api/totalovertimes";
 
+interface returnMessage {
+    code: number
+    message: string | any
+}
+
 const listener = async (req: IncomingMessage, res: ServerResponse) => {
     try {
 
-        let result: string | object = ""
+        let result: returnMessage | any = { code: 200, message: "success" }
 
         if ((req.url as string).match('/company(.*?)')) {
 
@@ -33,11 +37,6 @@ const listener = async (req: IncomingMessage, res: ServerResponse) => {
         else if ((req.url as string).match('/employee/leave(.*?)')) {
 
             result = await leaveRequest(req) as string | object
-            console.log(JSON.stringify(result));
-        }
-        else if ((req.url as string).match('/employee/(.*?)/leave/(.*?)')) {
-
-            result = await approvedenyLeaveRequest(req) as string | object
             console.log(JSON.stringify(result));
         }
         else if ((req.url as string).match('/employee/overtime(.*?)')) {
@@ -86,8 +85,8 @@ const listener = async (req: IncomingMessage, res: ServerResponse) => {
             console.log(JSON.stringify(result));
         }
 
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(result))
+        res.writeHead(result.code, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result.message))
 
     } catch (error) {
         console.log(error);

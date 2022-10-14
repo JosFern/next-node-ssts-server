@@ -4,6 +4,7 @@ import _, { find, map } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { employee } from "../modules/employee";
 import { deleteDB, selectDB } from "../lib/database/query";
+import { account } from "../modules/account";
 
 
 export const employeeRequest = async (req: IncomingMessage) => {
@@ -17,11 +18,13 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
             const { firstname, lastname, email, password, salaryperhour, employmenttype, companyID, position } = postData
 
-            const id = uuidv4()
+            const accountID = uuidv4()
 
-            const newEmployer = new employee(id, firstname, lastname, email, password, "employee", undefined, salaryperhour, employmenttype, companyID, position)
+            const newEmployer = new employee(undefined, accountID, salaryperhour, employmenttype, companyID, position)
 
-            newEmployer.insertEmployee()
+            const newAccount = new account(accountID, firstname, lastname, email, password, "employee")
+
+            // newEmployer.insertEmployee()
 
             return "employee successfully added"
 
@@ -31,23 +34,23 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
             const emplye: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            const putModel = new employee(
-                emplye[0]?.accountID,   //accountID
-                putData.firstname,      //firstname
-                putData.lastname,       //lastname
-                putData.email,          //email
-                putData.password,       //password
-                "employee",             //employee
-                getResult.id,           //employeeID
-                putData.salaryperhour,  //salaryperhour
-                putData.employmenttype, //type
-                putData.companyID,      //companyID
-                putData.position,       //position
-            )
+            // const putModel = new employee(
+            //     emplye[0]?.accountID,   //accountID
+            //     putData.firstname,      //firstname
+            //     putData.lastname,       //lastname
+            //     putData.email,          //email
+            //     putData.password,       //password
+            //     "employee",             //employee
+            //     getResult.id,           //employeeID
+            //     putData.salaryperhour,  //salaryperhour
+            //     putData.employmenttype, //type
+            //     putData.companyID,      //companyID
+            //     putData.position,       //position 
+            // )
 
-            putModel.updateEmployee()
+            // putModel.updateEmployee()
 
-            putModel.updateAccount(putData.origEmail)
+            // putModel.updateAccount(putData.origEmail)
 
             return "employee successfully updated"
 

@@ -1,7 +1,8 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { store } from "../modules/store";
+import { leave } from "../modules/leaves";
+import { selectDB, updateDB } from "../lib/database/query";
 
 
 export const leaveRequest = async (req: IncomingMessage) => {
@@ -15,32 +16,40 @@ export const leaveRequest = async (req: IncomingMessage) => {
 
             const postData: object | any = await getJSONDataFromRequestStream(req)
 
+            console.log(postData);
+
+
+            const postModel = new leave(
+                undefined,
+                postData.datestart,
+                postData.dateend,
+                postData.reason,
+                postData.approved,
+                getResult.id)
+
+            postModel.insertLeave()
+
             return "leave request sent"
 
-        // case 'PUT':
+        case 'PUT':
 
-        //     // FOR EMPLOYER TO APPROVE/DENY LEAVE REQUEST
+            // FOR EMPLOYER TO APPROVE/DENY LEAVE REQUEST
 
-        //     const putData: object | any = await getJSONDataFromRequestStream(req)
+            const putData: object | any = await getJSONDataFromRequestStream(req)
 
-        //     console.log(getResult);
+            const stringFormat = ` approved=${putData.approved ? 1 : 0} `
 
-        //     const status: string = putData.isApproved ? "Leave Approved" : "Leave Denied"
+            updateDB('Leave', stringFormat, getResult.id, "id")
 
-        //     return status
-
+            return putData.approved ? "leave approved" : "leave denied"
 
         case 'GET':
 
             //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE LEAVES
 
-            return store.getEmployeeLeaves(getResult.id)
+            const leaves = selectDB('Leave', `employeeID='${getResult.id}'`)
 
-        // const employee = _.filter(leaves, { empID: Number(getResult.id) })
-
-        // console.log(employee);
-
-        // return employee
+            return leaves
 
         default:
             break;

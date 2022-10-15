@@ -1,48 +1,50 @@
 import { IncomingMessage } from "http";
+import { employee } from "../modules/employee";
+import { selectDB } from "../lib/database/query";
 import { getPathParams } from "../util/generateParams";
-import _ from 'lodash';
-import { companies } from "../../_data_/companies";
-import { computeTotalOvertime } from "../modules/computations";
-import { employees } from "../../_data_/employees";
-import { overtimes } from "../../_data_/overtime";
 
-interface employee {
-    id: number
-    firstname: string
-    lastname: string
-    email: string
-    salaryperhour: number
-    employmenttype: string
-    position: string
-    company: number
+interface returnMessage {
+    code: number
+    message: string | any
 }
-
 
 export const totalOTRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/totalovertimes/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/employee/totalovertime/:id')
 
-        case 'GET':
+        switch (req.method) {
 
-            //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
+            case 'GET':
 
-            // const employee: employee | any = _.find(employees, { id: Number(getResult.id) })
+                //FOR EMPLOYEE RETRIEVE TOTAL OVERTIME HOURS
 
-            // const assocCompany: any = _.find(companies, { id: employee.company })
+                const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            // const totalOT = computeTotalOvertime(overtimes, Number(getResult.id), assocCompany.overtimelimit)
+                if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
 
-            // console.log(totalOT);
+                const model = new employee(
+                    getEmployee[0].employeeID,
+                    getEmployee[0].accountID,
+                    getEmployee[0].rate,
+                    getEmployee[0].empType,
+                    getEmployee[0].companyID,
+                    getEmployee[0].pos,
+                )
 
-            // return { totalOT }
+                const totalOvertime = await model.getTotalOvertime()
 
-            return "total overtime"
+                response = { ...response, code: 200, message: { totalOvertime } }
 
+                return response as returnMessage
 
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
 
-        default:
-            break;
     }
 }

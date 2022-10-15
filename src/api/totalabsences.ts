@@ -1,44 +1,51 @@
 import { IncomingMessage } from "http";
+import { selectDB } from "../lib/database/query";
+import { employee } from "../modules/employee";
 import { getPathParams } from "../util/generateParams";
-import _ from 'lodash';
-import { computeTotalAbsences, computeTotalLeaves } from "../modules/computations";
-import { companies } from "../../_data_/companies";
-import { employees } from "../../_data_/employees";
-import { leaves } from "../../_data_/leave";
-import { absences } from "../../_data_/absences";
 
-interface employee {
-    id: number
-    firstname: string
-    lastname: string
-    email: string
-    salaryperhour: number
-    employmenttype: string
-    position: string
-    company: number
+interface returnMessage {
+    code: number
+    message: string | any
 }
 
 export const totalAbsencesRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/totalabsences/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/employee/totalabsence/:id')
 
-        case 'GET':
+        switch (req.method) {
 
-            //FOR EMPLOYEE RETRIEVE TOTAL ABSENCES
-            // const getEmployee: employee | any = _.find(employees, { id: Number(getResult.id) })
+            case 'GET':
 
-            // const assocCompany: any = _.find(companies, { id: getEmployee.company })
+                //FOR EMPLOYEE RETRIEVE TOTAL ABSENCES
 
-            // const totalLeaves = computeTotalLeaves(leaves, Number(getResult.id))
+                const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            // const totalAbsence = computeTotalAbsences(absences, Number(getResult.id), assocCompany.allotedleaves, totalLeaves)
+                if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
 
-            // return { totalAbsence }
-            return "total absences"
+                const model = new employee(
+                    getEmployee[0].employeeID,
+                    getEmployee[0].accountID,
+                    getEmployee[0].rate,
+                    getEmployee[0].empType,
+                    getEmployee[0].companyID,
+                    getEmployee[0].pos,
+                )
 
-        default:
-            break;
+                const totalAbsence = await model.getTotalAbsences()
+
+                response = { ...response, code: 200, message: { totalAbsence } }
+
+                return response as returnMessage
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
+
     }
+
 }

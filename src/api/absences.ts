@@ -2,36 +2,69 @@ import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import _ from 'lodash';
 import { absence } from "../modules/absences";
-import { selectDB } from "../lib/database/query";
+import { deleteDB, selectDB } from "../lib/database/query";
 
+interface returnMessage {
+    code: number
+    message: string | any
+}
 
 export const absenceRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/absence/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/employee/absence/:id')
 
-        case 'POST':
+        switch (req.method) {
 
-            // FOR EMPLOYER SETTING AN ABSENCE TO EMPLOYEE
+            case 'POST':
+                {
+                    // FOR EMPLOYER SETTING AN ABSENCE TO EMPLOYEE
 
-            const postData: any = await getJSONDataFromRequestStream(req)
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-            const postModel = new absence(undefined, postData.datestart, postData.dateend, getResult.id)
+                    const { dateStart, dateEnd } = data
 
-            postModel.insertAbsence()
+                    const model = new absence(undefined, dateStart, dateEnd, getResult.id)
 
-            return "absence set"
+                    model.insertData()
 
-        case 'GET':
+                    response = { ...response, code: 201, message: "Employee Absence Set" }
 
-            //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE ABSENCES
+                    return response as returnMessage
+                }
 
-            const absences = selectDB('Absence', `employeeID='${getResult.id}'`)
+            case 'GET':
+                {
+                    //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE ABSENCES
 
-            return absences
+                    const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-        default:
-            break;
+                    if (employee.length === 0) return { code: 404, message: "Employee not found" }
+
+                    const absences = await selectDB('Absence', `employeeID='${getResult.id}'`)
+
+                    response = { ...response, message: absences }
+
+                    return response as returnMessage
+                }
+
+            case 'DELETE':
+
+                {
+                    deleteDB("Absence", getResult.id, "id")
+
+                    response = { ...response, message: "Absence successfully deleted" }
+
+                    return response as returnMessage
+                }
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err)
+
     }
 }

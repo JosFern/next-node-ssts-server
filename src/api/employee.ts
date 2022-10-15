@@ -1,96 +1,159 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
-import _, { find, map } from 'lodash';
+import { find, map } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { employee } from "../modules/employee";
 import { deleteDB, selectDB } from "../lib/database/query";
 import { account } from "../modules/account";
+import { document } from "../lib/database/document";
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
+interface returnMessage {
+    code: number
+    message: string | any
+}
 
 export const employeeRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/:id')
+    try {
 
-    switch (req.method) {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-        case 'POST':
-            const postData: any = await getJSONDataFromRequestStream(req)
+        const getResult = getPathParams(req.url as string, '/employee/:id')
 
-            const { firstname, lastname, email, password, salaryperhour, employmenttype, companyID, position } = postData
+        switch (req.method) {
 
-            const accountID = uuidv4()
+            case 'POST':
+                {
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-            const newEmployer = new employee(undefined, accountID, salaryperhour, employmenttype, companyID, position)
+                    const { firstname, lastname, email, password, rate, empType, companyID, pos } = data
 
-            const newAccount = new account(accountID, firstname, lastname, email, password, "employee")
+                    const statement = `email='${email}'`
 
-            // newEmployer.insertEmployee()
+                    const isExist = await selectDB('Account', statement)
 
-            return "employee successfully added"
+                    if (isExist.length > 0) return { ...response, code: 409, message: "Email already exist" } as returnMessage
 
-        case 'PUT':
+                    const accountID = uuidv4()
 
-            const putData: any = await getJSONDataFromRequestStream(req)
+                    const newEmployee = new employee(undefined, accountID, rate, empType, companyID, pos)
 
-            const emplye: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+                    await newEmployee.insertData()
 
-            // const putModel = new employee(
-            //     emplye[0]?.accountID,   //accountID
-            //     putData.firstname,      //firstname
-            //     putData.lastname,       //lastname
-            //     putData.email,          //email
-            //     putData.password,       //password
-            //     "employee",             //employee
-            //     getResult.id,           //employeeID
-            //     putData.salaryperhour,  //salaryperhour
-            //     putData.employmenttype, //type
-            //     putData.companyID,      //companyID
-            //     putData.position,       //position 
-            // )
+                    const newAccount = new account(accountID, firstname, lastname, email, password, "employee")
 
-            // putModel.updateEmployee()
+                    await newAccount.insertData()
 
-            // putModel.updateAccount(putData.origEmail)
+                    response = { ...response, code: 201, message: "Employee successfully added" }
 
-            return "employee successfully updated"
+                    return response as returnMessage
+                }
 
+            case 'PUT':
+                {
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-        case 'GET':
+                    const { firstname, lastname, email, password, rate, empType, pos } = data
 
-            if (!getResult?.id) {
+                    const statement = `employeeID='${getResult.id}'`
 
-                const employees = await selectDB('Employee')
+                    const getEmployee: any = await selectDB("Employee", statement)
 
-                const accounts = await selectDB('Account')
+                    if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
 
-                const employersInfo = map(employees, (emp) => {
-                    const accInfo = find(accounts, { accountID: emp.accountID })
-                    return { ...emp, ...accInfo }
-                })
+                    const getAccount: any = await selectDB('Account', `accountID='${getEmployee[0].accountID}'`)
 
-                return employersInfo
+                    if (getAccount.length === 0) return { code: 404, message: "Employee account not found" }
 
-            } else {
+                    const accountModel = new account(getAccount[0].accountID, firstname, lastname, email, password, "employee")
 
-                const employee: object | any = await selectDB('Employee', `employeeID='${getResult?.id}'`)
+                    await accountModel.updateData()
 
-                const account = await selectDB('Account', `accountID='${employee[0]?.accountID}'`)
+                    // const params = {
+                    //     TableName: "Employee",
+                    //     Key: {
+                    //         employeeID: getResult.id,
+                    //         accountID: getEmployee[0].accountID
+                    //     },
+                    //     UpdateExpression: "set rate = :r, empType = :t, pos = :p",
+                    //     ExpressionAttributeValues: {
+                    //         ":r": rate,
+                    //         ":t": empType,
+                    //         ":p": pos
+                    //     },
+                    // }
 
-                return { ...employee[0], ...account[0] }
-            }
+                    // const sent = await document.send(new UpdateCommand(params));
 
-        case 'DELETE':
+                    // console.log("Success - item added or updated", sent);
 
-            const emp: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+                    const employeeModel = new employee(getResult.id, getAccount[0].accountID, rate, empType, getEmployee[0].companyID, pos)
 
-            const acc: object | any = await selectDB('Account', `accountID='${emp[0]?.accountID}'`)
+                    await employeeModel.updateData()
 
-            deleteDB("Account", acc[0].accountID, "accountID", "email", acc[0].email)
-            deleteDB('Employee', getResult.id, "employeeID", "accountID", acc[0].accountID)
+                    response = { ...response, message: "Employee successfully updated" }
 
-            return "employee successfully deleted"
+                    return response as returnMessage
+                }
 
-        default:
-            break;
+            case 'GET':
+                {
+                    if (!getResult?.id) {
+
+                        const employees = await selectDB('Employee')
+
+                        const accounts = await selectDB('Account')
+
+                        const employeesInfo = map(employees, (emp) => {
+                            const accInfo = find(accounts, { accountID: emp.accountID })
+                            return { ...emp, ...accInfo }
+                        })
+
+                        response = { ...response, message: employeesInfo }
+
+                        return response as returnMessage
+
+                    } else {
+
+                        const employee: object | any = await selectDB('Employee', `employeeID='${getResult?.id}'`)
+
+                        if (employee.length === 0) return { code: 404, message: "Employee not found" }
+
+                        const account = await selectDB('Account', `accountID='${employee[0]?.accountID}'`)
+
+                        if (account.length === 0) return { code: 404, message: "Employee account not found" }
+
+                        response = { ...response, message: { ...employee[0], ...account[0] } }
+
+                        return response as returnMessage
+                    }
+                }
+
+            case 'DELETE':
+
+                {
+                    const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+
+                    if (employee.length === 0) return { code: 404, message: "Employee not found" }
+
+                    const account: object | any = await selectDB('Account', `accountID='${employee[0]?.accountID}'`)
+
+                    if (account.length === 0) return { code: 404, message: "Employee account not found" }
+
+                    deleteDB('Employee', getResult.id, "employeeID", "accountID", account[0].accountID)
+                    deleteDB("Account", account[0].accountID, "accountID", "email", account[0].email)
+
+                    response = { ...response, message: "Employee successfully deleted" }
+
+                    return response as returnMessage
+                }
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
+
     }
 }

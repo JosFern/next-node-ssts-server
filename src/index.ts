@@ -5,6 +5,7 @@ import { dailywageRequest } from "./api/dailywage";
 import { employeeRequest } from "./api/employee";
 import { employerRequest } from "./api/employer";
 import { leaveRequest } from "./api/leave";
+import { loginRequest } from "./api/login";
 import { monthlySalRequest } from "./api/monthlysalary";
 import { overtimeRequest } from "./api/overtime";
 import { accountRequest } from "./api/profile";
@@ -25,6 +26,12 @@ const listener = async (req: IncomingMessage, res: ServerResponse) => {
         if ((req.url as string).match('/company(.*?)')) {
 
             result = await companyRequest(req) as string | object
+            console.log(JSON.stringify(result));
+
+        }
+        else if ((req.url as string).match('/login(.*?)')) {
+
+            result = await loginRequest(req) as string | object
             console.log(JSON.stringify(result));
 
         }
@@ -59,12 +66,12 @@ const listener = async (req: IncomingMessage, res: ServerResponse) => {
             result = await remainingleave(req) as string | object
             console.log(JSON.stringify(result));
         }
-        else if ((req.url as string).match('/employee/totalovertimes(.*?)')) {
+        else if ((req.url as string).match('/employee/totalovertime(.*?)')) {
 
             result = await totalOTRequest(req) as string | object
             console.log(JSON.stringify(result));
         }
-        else if ((req.url as string).match('/employee/totalabsences(.*?)')) {
+        else if ((req.url as string).match('/employee/totalabsence(.*?)')) {
 
             result = await totalAbsencesRequest(req) as string | object
             console.log(JSON.stringify(result));

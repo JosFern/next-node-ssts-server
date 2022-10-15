@@ -1,107 +1,95 @@
 import { leave } from "./leaves"
 import { absence } from "./absences"
 import { overtime } from "./overtime"
-import { store } from "./store"
-import _ from 'lodash'
+import { chain, map } from 'lodash'
 import { v4 as uuidv4 } from 'uuid';
 import { differenceInDays, differenceInHours, isSameMonth, parseISO } from "date-fns"
-import { company } from "./company"
-import { account } from "./account"
-import { insertDB, selectDB, updateDB } from "../lib/database/query"
+import { selectDB } from "../lib/database/query"
 import { dbOperations } from "./dbOperations"
 
 export class employee extends dbOperations {
     public readonly employeeID: string
     public readonly accountID: string
     public readonly companyID: string
-    private employmenttype: "parttime" | "fulltime"
-    private salaryperhour: number
-    private position: string
+    private empType: "parttime" | "fulltime"
+    private rate: number
+    private pos: string
+    private readonly TABLE: string = "Employee"
 
     constructor(
         employeeID: string | undefined,
         accountID: string,
-        salaryperhour: number,
-        employmenttype: "parttime" | "fulltime",
+        rate: number,
+        empType: "parttime" | "fulltime",
         companyID: string,
-        position: string
+        pos: string
     ) {
         super()
         this.employeeID = employeeID === undefined ? uuidv4() : employeeID
         this.accountID = accountID
-        this.salaryperhour = salaryperhour
-        this.employmenttype = employmenttype
+        this.rate = rate
+        this.empType = empType
         this.companyID = companyID
-        this.position = position
+        this.pos = pos
+
+        this.assignData({
+            employeeID: this.employeeID,
+            accountID: this.accountID,
+            rate: this.rate,
+            empType: this.empType,
+            pos: this.pos,
+            companyID: this.companyID,
+            TABLE: this.TABLE
+        })
     }
 
-    leaves: leave[] = []
-    absences: absence[] = []
-    overtimes: overtime[] = []
-
-    getSalaryPerHour = (): number => this.salaryperhour
-
-    getEmploymentType = () => this.employmenttype
-
-    getPosition = () => this.position
-
-    postLeave = (leave: leave) => this.leaves.push(leave)
-
-    postAbsence = (absence: absence) => this.absences.push(absence)
-
-    postOvertime = (ot: overtime) => this.overtimes.push(ot)
+    private leaves: leave[] = []
+    private overtimes: overtime[] = []
+    private absences: absence[] = []
 
     getAssocCompany = async () => {
         // _.find(store.getCompanies(), (comp) => comp.id === this.companyID)
 
         const getCompany: any = await selectDB('Company', `id='${this.companyID}'`)
 
-        return getCompany
+        return getCompany[0]
     }
 
-    // insertEmployee = async () => {
-    //     const employeeStringFormat = "{ 'employeeID': ?, 'accountID': ?, 'salaryperhour': ?, 'employmenttype': ?, 'companyID': ?, 'position': ? }"
-    //     const employeeParams = [
-    //         { S: this.employeeID },
-    //         { S: this.accountID },
-    //         { N: `${this.salaryperhour}` },
-    //         { S: this.employmenttype },
-    //         { S: this.companyID },
-    //         { S: this.position },
-    //     ]
+    retrieveLeaves = async () => {
 
-    //     const accountStringFormat = "{ 'accountID': ?, 'email': ?, 'firstname': ?, 'lastname': ?, 'password': ?, 'role': ?}"
-    //     const accountParams = [
-    //         { S: this.accountID },
-    //         { S: this.getEmail() },
-    //         { S: this.getFirstName() },
-    //         { S: this.getLastName() },
-    //         { S: this.getPassword() },
-    //         { S: this.role },
-    //     ]
+        const leaves: any = await selectDB('Leave', `employeeID='${this.employeeID}'`)
 
-    //     try {
-    //         await insertDB("Employee", employeeStringFormat, employeeParams)
-    //         await insertDB("Account", accountStringFormat, accountParams)
-    //     } catch (err) {
-    //         console.error(err)
-    //         throw new Error("Unable to save");
-    //     }
-    // }
-
-    updateEmployee = async () => {
-
-        const stringFormat =
-            ` salaryperhour=${this.salaryperhour}, employmenttype='${this.employmenttype}', companyID='${this.companyID}', position='${this.position}'  `
-
-        updateDB('Employee', stringFormat, this.employeeID, "employeeID", "accountID", this.accountID)
+        this.leaves = map(leaves, lv => {
+            return new leave(lv.id, lv.datestart, lv.dateend, lv.reason, lv.approved === 1 ? true : false, lv.employeeID)
+        })
     }
 
-    retrieveLeaves = () => this.leaves
+    retrieveOvertimes = async () => {
 
-    retrieveOvertimes = () => this.overtimes
+        const overtimes: any = await selectDB('Overtime', `employeeID='${this.employeeID}'`)
 
-    retrieveAbsences = () => this.absences
+        this.overtimes = map(overtimes, ot => {
+            return new overtime(
+                ot.id,
+                ot.dateHappen,
+                ot.timeStart,
+                ot.timeEnd,
+                ot.reason,
+                ot.approved === 1 ? true : false,
+                ot.employeeID
+            )
+        })
+    }
+
+    retrieveAbsences = async () => {
+
+        const absences: any = await selectDB('Absence', `employeeID='${this.employeeID}'`)
+
+        this.absences = map(absences, (ab) => {
+            return new absence(ab.id, ab.dateStart, ab.dateEnd, ab.employeeID)
+        })
+    }
+
 
     //-----------------------COMPUTATION METHODS BELOW-----------------------------
 
@@ -109,22 +97,26 @@ export class employee extends dbOperations {
 
         let dailyWorkHours = 4;
 
-        if (this.employmenttype === 'fulltime') dailyWorkHours = 8;
+        if (this.empType === 'fulltime') dailyWorkHours = 8;
 
-        return this.getSalaryPerHour() * dailyWorkHours
+        return this.rate * dailyWorkHours
     }
 
     getRemainingLeaves = async () => {
+
+        await this.retrieveLeaves()
 
         const getLeaves = this.getTotalLeaves()
 
         const assocCompany = await this.getAssocCompany()
 
+        console.log(assocCompany);
+
         return Math.max(assocCompany.allocateLeaves - getLeaves, 0)
     }
 
     getTotalLeaves = (): number => {
-        const getLeaves = _.chain(this.leaves)
+        const getLeaves = chain(this.leaves)
             .filter((leave) => isSameMonth(parseISO(leave.datestart), new Date()) && leave.approved)
             .reduce((total, leave) =>
                 total += differenceInDays(parseISO(leave.dateend), parseISO(leave.datestart)) + 1,
@@ -136,10 +128,12 @@ export class employee extends dbOperations {
 
     getTotalAbsences = async () => {
 
-        let getAbsences = _.chain(this.absences)
-            .filter((absence) => isSameMonth(parseISO(absence.datestart), new Date()))
+        await this.retrieveAbsences()
+
+        let getAbsences = chain(this.absences)
+            .filter((absence) => isSameMonth(parseISO(absence.dateStart), new Date()))
             .reduce((total, absence) =>
-                total += differenceInDays(parseISO(absence.dateend), parseISO(absence.datestart)) + 1,
+                total += differenceInDays(parseISO(absence.dateEnd), parseISO(absence.dateStart)) + 1,
                 0)
             .value()
 
@@ -154,10 +148,12 @@ export class employee extends dbOperations {
 
     getTotalOvertime = async () => {
 
-        const getOvertimes = _.chain(this.overtimes)
-            .filter((ot) => isSameMonth(parseISO(ot.datehappen), new Date()) && ot.approved)
+        await this.retrieveOvertimes()
+
+        const getOvertimes = chain(this.overtimes)
+            .filter((ot) => isSameMonth(parseISO(ot.dateHappen), new Date()) && ot.approved)
             .reduce((total, ot) =>
-                total += differenceInHours(parseISO(ot.timeend), parseISO(ot.timestart)),
+                total += differenceInHours(parseISO(ot.timeEnd), parseISO(ot.timeStart)),
                 0)
             .value()
 
@@ -182,7 +178,9 @@ export class employee extends dbOperations {
 
         const deductFromAbsences = absences * dailywage
 
-        const monthSalary = (monthlyWage + (overtime + (this.salaryperhour * .2)) + bonusLeaveWages) - deductFromAbsences
+        const monthSalary = (monthlyWage + (overtime + (this.rate * .2)) + bonusLeaveWages) - deductFromAbsences
+
+        console.log(dailywage, remainingleave, overtime, absences, monthlyWage, bonusLeaveWages, deductFromAbsences);
 
         return Math.round(monthSalary)
     }

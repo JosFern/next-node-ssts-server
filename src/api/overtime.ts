@@ -1,57 +1,108 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
-import _ from 'lodash';
 import { overtime } from "../modules/overtime";
-import { selectDB, updateDB } from "../lib/database/query";
+import { deleteDB, selectDB, updateDB } from "../lib/database/query";
+import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { document } from "../lib/database/document";
 
+interface returnMessage {
+    code: number
+    message: string | any
+}
 
 export const overtimeRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/leave/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/employee/overtime/:id')
 
-        case 'POST':
-            // FOR EMPLOYEE REQUESTING AN OVERTIME
+        switch (req.method) {
 
-            const postData: any = await getJSONDataFromRequestStream(req)
+            case 'POST':
+                {
+                    // FOR EMPLOYEE REQUESTING AN OVERTIME
 
-            const newOT = new overtime(
-                undefined,
-                postData.datehappen,
-                postData.timestart,
-                postData.timeend,
-                postData.reason,
-                postData.approved,
-                getResult.id
-            )
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-            newOT.insertOvertime()
+                    const newOT = new overtime(
+                        undefined,
+                        data.dateHappen,
+                        data.timeStart,
+                        data.timeEnd,
+                        data.reason,
+                        data.approved,
+                        getResult.id
+                    )
 
-            return "overtime request sent"
+                    newOT.insertData()
 
-        case 'PUT':
+                    response = { ...response, code: 201, message: "Overtime request created" }
 
-            // FOR EMPLOYER TO APPROVE/DENY OVERTIME REQUEST
+                    return response as returnMessage
+                }
 
-            const putData: object | any = await getJSONDataFromRequestStream(req)
+            case 'PUT':
+                {
+                    // FOR EMPLOYER TO APPROVE/DENY OVERTIME REQUEST
 
-            const stringFormat = ` approved=${putData.approved ? 1 : 0} `
+                    const data: object | any = await getJSONDataFromRequestStream(req)
 
-            updateDB('Overtime', stringFormat, getResult.id, "id")
+                    const getOvertime: any = await selectDB('Overtime', `id='${getResult.id}'`)
 
-            return putData.approved ? "overtime approved" : "overtime denied"
+                    if (getOvertime.length === 0) return { code: 404, message: "Overtime not found" }
 
+                    const model = new overtime(
+                        getResult.id,
+                        getOvertime[0].dateHappen,
+                        getOvertime[0].timeStart,
+                        getOvertime[0].timeEnd,
+                        getOvertime[0].reason,
+                        data.approved,
+                        getOvertime[0].employeeID
+                    )
 
-        case 'GET':
+                    model.updateData()
 
-            //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
+                    response = { ...response, message: `Overtime ${data.approved ? "Approved" : "Denied"}` }
 
-            const overtimes = selectDB('Overtime', `employeeID='${getResult.id}'`)
+                    return response as returnMessage
+                }
 
-            return overtimes
+            case 'GET':
+                {
+                    //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
 
-        default:
-            break;
+                    const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+
+                    if (employee.length === 0) return { code: 404, message: "Employee not found" }
+
+                    const overtimes = await selectDB('Overtime')
+
+                    response = { ...response, message: overtimes }
+
+                    return response as returnMessage
+                }
+
+            case 'DELETE':
+
+                {
+                    const overtime: any = await selectDB("Overtime", `id='${getResult.id}'`)
+
+                    if (overtime.length === 0) return { code: 404, message: "Overtime not found" }
+
+                    await deleteDB("Overtime", getResult.id, "id", "dateHappen", overtime[0].dateHappen)
+
+                    response = { ...response, message: "Overtime successfully deleted" }
+
+                    return response as returnMessage
+                }
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err)
+
     }
 }

@@ -1,32 +1,27 @@
 import { insertDB } from "../lib/database/query"
 import { v4 as uuidv4 } from 'uuid';
+import { dbOperations } from "./dbOperations";
 
-export class absence {
-    id: string
-    datestart: string
-    dateend: string
-    employeeID: string
+export class absence extends dbOperations {
+    public readonly id: string
+    public readonly dateStart: string
+    public readonly dateEnd: string
+    private readonly employeeID: string
+    private readonly TABLE: string = "Absence"
 
-    constructor(id: string | undefined, datestart: string, dateend: string, employeeID: string) {
+    constructor(id: string | undefined, dateStart: string, dateEnd: string, employeeID: string) {
+        super()
         this.id = id === undefined ? uuidv4() : id
-        this.datestart = datestart
-        this.dateend = dateend
+        this.dateStart = dateStart
+        this.dateEnd = dateEnd
         this.employeeID = employeeID
-    }
 
-    insertAbsence = async () => {
-        const stringFormat = "{ 'id': ?, 'datestart': ?, 'dateend': ?, 'employeeID': ? }"
-        const params = [
-            { S: this.id },
-            { S: this.datestart },
-            { S: this.dateend },
-            { S: this.employeeID },
-        ]
-        try {
-            await insertDB("Absence", stringFormat, params)
-        } catch (err) {
-            console.error(err)
-            throw new Error("Unable to save");
-        }
+        this.assignData({
+            id: this.id,
+            dateStart: this.dateStart,
+            dateEnd: this.dateEnd,
+            employeeID: this.employeeID,
+            TABLE: this.TABLE
+        })
     }
 }

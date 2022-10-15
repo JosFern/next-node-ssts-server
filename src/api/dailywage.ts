@@ -1,46 +1,52 @@
 import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import _ from 'lodash';
-import { employees } from "../../_data_/employees";
-import { store } from "../modules/store";
 import { selectDB } from "../lib/database/query";
 import { employee } from "../modules/employee";
 
+interface returnMessage {
+    code: number
+    message: string | any
+}
+
 export const dailywageRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/dailywage/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/employee/dailywage/:id')
 
-        case 'GET':
+        switch (req.method) {
 
-            //FOR EMPLOYEE RETRIEVE DAILY WAGE
+            case 'GET':
 
-            const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+                //FOR EMPLOYEE RETRIEVE DAILY WAGE
 
-            const getAccount: any = await selectDB('Account', `accountID='${getEmployee[0].accountID}'`)
+                const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            const acc = getAccount[0]
+                if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
 
-            const model = new employee(
-                getEmployee[0].accountID,
-                acc.firstname,
-                acc.lastname,
-                acc.email,
-                acc.password,
-                acc.role,
-                getEmployee[0].employeeID,
-                getEmployee[0].salaryperhour,
-                getEmployee[0].employmenttype,
-                getEmployee[0].companyID,
-                getEmployee[0].position,
-            )
+                const model = new employee(
+                    getEmployee[0].employeeID,
+                    getEmployee[0].accountID,
+                    getEmployee[0].rate,
+                    getEmployee[0].empType,
+                    getEmployee[0].companyID,
+                    getEmployee[0].pos,
+                )
 
-            const dailywage = model.getDailyWage()
+                const dailywage = model.getDailyWage()
 
-            return { dailywage }
+                response = { ...response, code: 200, message: { dailywage } }
 
-        default:
-            break;
+                return response as returnMessage
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
+
     }
+
 }

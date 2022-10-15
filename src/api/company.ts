@@ -1,8 +1,9 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
-import _ from 'lodash';
 import { company } from "../modules/company";
-import { selectDB } from "../lib/database/query";
+import { deleteDB, selectDB } from "../lib/database/query";
+import { slice } from "lodash";
+import { v4 as uuidv4 } from 'uuid';
 
 interface returnMessage {
     code: number
@@ -30,7 +31,11 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                     if (isExist.length > 0) return { ...response, code: 409, message: "Company name already exist" } as returnMessage
 
-                    const model = new company(undefined, name, allotedleaves, overtimelimit)
+                    const id = uuidv4()
+
+                    const sliceID = slice(id, 0, 13).join("")
+
+                    const model = new company(sliceID, name, allotedleaves, overtimelimit)
 
                     await model.insertData()
 
@@ -56,37 +61,41 @@ export const companyRequest = async (req: IncomingMessage) => {
                 }
 
             case 'GET':
+                {
+                    if (!result.id) {
 
-                if (!result.id) {
+                        const listing = await selectDB('Company')
 
-                    const listing = await selectDB('Company')
+                        response = { ...response, message: listing }
 
-                    response = { ...response, message: listing }
+                        return response
 
-                    return response
+                    } else {
 
-                } else {
+                        const statement = `id='${result.id}'`
 
-                    const statement = `id='${result.id}'`
+                        const company = await selectDB('Company', statement)
 
-                    const comp = await selectDB('Company', statement)
+                        if (company.length === 0) return { code: 404, message: "Company not found" }
 
-                    if (comp.length === 0) return { code: 404, message: "Company not found" }
+                        response = { ...response, message: company[0] }
 
-                    response = { ...response, message: comp[0] }
-
-                    return response
+                        return response
+                    }
                 }
 
             case 'DELETE':
+                {
+                    const company: object | any = await selectDB('Company', `id='${result.id}'`)
 
-                // const deleteResult = getPathParams(req.url as string, '/company/:id')
+                    if (company.length === 0) return { code: 404, message: "Company not found" }
 
-                // deleteDB("Company", deleteResult.id, "id", "name", or)
+                    deleteDB("Company", result.id, "id", "name", company[0].name)
 
-                response = { ...response, message: "Company successfully deleted" }
+                    response = { ...response, message: "Company successfully deleted" }
 
-                return response
+                    return response
+                }
 
 
             default:

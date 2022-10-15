@@ -1,41 +1,36 @@
 import { insertDB, updateDB } from '../lib/database/query';
 import { v4 as uuidv4 } from 'uuid';
+import { dbOperations } from './dbOperations';
 
-export class overtime {
+export class overtime extends dbOperations {
     public readonly id: string
-    public readonly datehappen: string
-    public readonly timestart: string
-    public readonly timeend: string
+    public readonly dateHappen: string
+    public readonly timeStart: string
+    public readonly timeEnd: string
     public readonly reason: string
     public approved: boolean
-    public readonly employeeID: string
+    private readonly employeeID: string
+    private readonly TABLE: string = "Overtime"
 
-    constructor(id: string | undefined, datehappen: string, timestart: string, timeend: string, reason: string, approved: boolean, employeeID: string) {
+    constructor(id: string | undefined, dateHappen: string, timeStart: string, timeEnd: string, reason: string, approved: boolean, employeeID: string) {
+        super()
         this.id = id === undefined ? uuidv4() : id
-        this.datehappen = datehappen
-        this.timestart = timestart
-        this.timeend = timeend
+        this.dateHappen = dateHappen
+        this.timeStart = timeStart
+        this.timeEnd = timeEnd
         this.reason = reason
         this.approved = approved
         this.employeeID = employeeID
-    }
 
-    insertOvertime = async () => {
-        const stringFormat = "{ 'id': ?, 'date': ?, 'timestart': ?, 'timeend': ?, 'reason': ?, 'approved': ?, 'employeeID': ? }"
-        const params = [
-            { S: this.id },
-            { S: this.datehappen },
-            { S: this.timestart },
-            { S: this.timeend },
-            { S: this.reason },
-            { N: `${this.approved ? 1 : 0}` },
-            { S: this.employeeID },
-        ]
-        try {
-            await insertDB("Overtime", stringFormat, params)
-        } catch (err) {
-            console.error(err)
-            throw new Error("Unable to save");
-        }
+        this.assignData({
+            id: this.id,
+            dateHappen: this.dateHappen,
+            timeStart: this.timeStart,
+            timeEnd: this.timeEnd,
+            reason: this.reason,
+            approved: this.approved ? 1 : 0,
+            employeeID: this.employeeID,
+            TABLE: this.TABLE
+        })
     }
 }

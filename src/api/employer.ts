@@ -45,7 +45,7 @@ export const employerRequest = async (req: IncomingMessage) => {
 
                     response = { ...response, code: 201, message: "Employer successfully added" }
 
-                    return response
+                    return response as returnMessage
                 }
 
             case 'PUT':
@@ -67,54 +67,60 @@ export const employerRequest = async (req: IncomingMessage) => {
 
                     response = { ...response, message: "Employer successfully updated" }
 
-                    return response
+                    return response as returnMessage
                 }
 
             case 'GET':
+                {
+                    if (!getResult?.id) {
 
-                if (!getResult?.id) {
+                        const employers = await selectDB('Employer')
 
-                    const employers = await selectDB('Employer')
+                        const accounts = await selectDB('Account')
 
-                    const accounts = await selectDB('Account')
+                        const employersInfo = map(employers, (emp) => {
+                            const accInfo = find(accounts, { accountID: emp.accountID })
+                            return { ...emp, ...accInfo }
+                        })
 
-                    const employersInfo = map(employers, (emp) => {
-                        const accInfo = find(accounts, { accountID: emp.accountID })
-                        return { ...emp, ...accInfo }
-                    })
+                        response = { ...response, message: employersInfo }
 
-                    response = { ...response, message: employersInfo }
+                        return response
 
-                    return response
+                    } else {
 
-                } else {
+                        const employer: object | any = await selectDB('Employer', `employerID='${getResult?.id}'`)
+                        console.log(employer);
 
-                    const employer: object | any = await selectDB('Employer', `employerID='${getResult?.id}'`)
-                    console.log(employer);
+                        if (employer.length === 0) return { code: 404, message: "Employer not found" }
 
-                    if (employer.length === 0) return { code: 404, message: "Employer not found" }
+                        const account = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
 
-                    const account = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
+                        if (account.length === 0) return { code: 404, message: "Employer account not found" }
 
-                    if (account.length === 0) return { code: 404, message: "Employer not found" }
+                        response = { ...response, message: { ...employer[0], ...account[0] } }
 
-                    response = { ...response, message: { ...employer[0], ...account[0] } }
-
-                    return response
+                        return response as returnMessage
+                    }
                 }
 
             case 'DELETE':
+                {
+                    const employer: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
 
-                const emp: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
+                    if (employer.length === 0) return { code: 404, message: "Employer not found" }
 
-                const acc: object | any = await selectDB('Account', `accountID='${emp[0]?.accountID}'`)
+                    const account: object | any = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
 
-                deleteDB("Account", getResult.id, "accountID", "email", acc[0].email)
-                deleteDB('Employer', getResult.id, "employerID", "accountID", emp[0].accountID)
+                    if (account.length === 0) return { code: 404, message: "Employer account not found" }
 
-                response = { ...response, message: "Employer successfully deleted" }
+                    deleteDB("Account", getResult.id, "accountID", "email", account[0].email)
+                    deleteDB('Employer', getResult.id, "employerID", "accountID", account[0].accountID)
 
-                return response
+                    response = { ...response, message: "Employer successfully deleted" }
+
+                    return response as returnMessage
+                }
 
             default:
                 break;

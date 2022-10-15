@@ -4,42 +4,66 @@ import _ from 'lodash';
 import { account } from "../modules/account";
 import { selectDB } from "../lib/database/query";
 
+interface returnMessage {
+    code: number
+    message: string | any
+}
 
 export const accountRequest = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/profile/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/profile/:id')
 
-        case 'PUT':
+        switch (req.method) {
 
-            const putData: any = await getJSONDataFromRequestStream(req)
+            case 'PUT':
+                {
+                    const data: any = await getJSONDataFromRequestStream(req)
 
-            const putAccount = new account(
-                getResult.id,
-                putData.firstname,
-                putData.lastname,
-                putData.email,
-                putData.password,
-                putData.role,
-            )
+                    const { firstname, lastname, email, password, role } = data
 
-            putAccount.updateAccount(putData.origEmail)
+                    const acc: any = selectDB('Account', `accountID='${getResult.id}'`)
 
-            return "profile successfully updated"
+                    if (acc.length === 0) return { code: 404, message: "Account not found" }
 
+                    const model = new account(
+                        getResult.id,
+                        firstname,
+                        lastname,
+                        email,
+                        password,
+                        role,
+                    )
 
-        case 'GET':
+                    model.updateData()
 
-            if (!getResult?.id) {
-                const accs = selectDB('Account')
-                return accs
-            } else {
-                const acc = selectDB('Account', `accountID='${getResult.id}'`)
-                return acc
-            }
+                    response = { ...response, message: "Profile successfully updated" }
 
-        default:
-            break;
+                    return response as returnMessage
+                }
+
+            case 'GET':
+                {
+                    if (!getResult?.id) {
+                        const accounts = await selectDB('Account')
+                        return accounts
+                    } else {
+                        const account: any = await selectDB('Account', `accountID='${getResult.id}'`)
+
+                        if (account.length === 0) return { code: 404, message: "Account not found" }
+
+                        return account[0]
+                    }
+                }
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
+
     }
+
 }

@@ -5,6 +5,8 @@ import { dataToItem, itemToData } from "dynamo-converters";
 
 export const execute = async (params: any) => {
     try {
+        console.log(params);
+
         const valuesResponse = await document.send(new ExecuteStatementCommand(params));
         console.log("Success");
         return valuesResponse;
@@ -37,8 +39,6 @@ export const updateDB = async (tableName: string, statement: string, parameters:
         Statement: `UPDATE ${tableName} SET ${statement} WHERE ${where}`,
         Parameters: values(dataToItem(parameters))
     };
-    console.log(dataToItem(parameters))
-    console.log(values(dataToItem(parameters)))
     await execute(params)
     return "Successfully Update"
 };

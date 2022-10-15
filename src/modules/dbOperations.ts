@@ -59,11 +59,11 @@ export abstract class dbOperations {
         const fields = keys(newData)
         const params = values(newData)
 
-        const setFormat = map(fields, field => ` ${field} = ? `)
+        const setFormat = map(fields, field => ` ${field}=? `)
 
         const whereFormat = chain(schemas)
             .map(schema => values(schema)[0])
-            .map(schema => ` ${schema} = '${this.data[schema]}'`)
+            .map(key => ` ${key}='${this.data[key]}'`)
             .value()
 
         try {

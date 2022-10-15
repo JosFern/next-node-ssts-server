@@ -10,7 +10,7 @@ const params = {
             AttributeType: "S", //ATTRIBUTE_TYPE 
         },
         {
-            AttributeName: "date", //ATTRIBUTE_NAME_2
+            AttributeName: "dateHappen", //ATTRIBUTE_NAME_2
             AttributeType: "S", //ATTRIBUTE_TYPE 
         }
     ],
@@ -20,7 +20,7 @@ const params = {
             KeyType: "HASH",
         },
         {
-            AttributeName: "date",
+            AttributeName: "dateHappen",
             KeyType: "RANGE",
         }
     ],

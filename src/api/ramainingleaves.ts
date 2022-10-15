@@ -1,53 +1,51 @@
 import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
-import { map } from 'lodash';
 import { selectDB } from "../lib/database/query";
 import { employee } from "../modules/employee";
-import { leave } from "../modules/leaves";
+
+interface returnMessage {
+    code: number
+    message: string | any
+}
 
 export const remainingleave = async (req: IncomingMessage) => {
 
-    const getResult = getPathParams(req.url as string, '/employee/dailywage/:id')
+    try {
+        let response: returnMessage = { code: 200, message: "Success" }
 
-    switch (req.method) {
+        const getResult = getPathParams(req.url as string, '/employee/remainingleave/:id')
 
-        case 'GET':
+        switch (req.method) {
 
-            //FOR EMPLOYEE RETRIEVE REMAINING LEAVES
+            case 'GET':
 
-            const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+                //FOR EMPLOYEE RETRIEVE REMAINING LEAVES
 
-            const getAccount: any = await selectDB('Account', `accountID='${getEmployee[0].accountID}'`)
+                const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-            const leaves = selectDB('Leave', `employeeID='${getResult.id}'`)
+                if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
 
-            const acc = getAccount[0]
+                const model = new employee(
+                    getEmployee[0].employeeID,
+                    getEmployee[0].accountID,
+                    getEmployee[0].rate,
+                    getEmployee[0].empType,
+                    getEmployee[0].companyID,
+                    getEmployee[0].pos,
+                )
 
-            const model = new employee(
-                getEmployee[0].accountID,
-                acc.firstname,
-                acc.lastname,
-                acc.email,
-                acc.password,
-                acc.role,
-                getEmployee[0].employeeID,
-                getEmployee[0].salaryperhour,
-                getEmployee[0].employmenttype,
-                getEmployee[0].companyID,
-                getEmployee[0].position,
-            )
+                const remainingLeaves = await model.getRemainingLeaves()
 
-            const empLeaves = map(leaves, (lv: any) => {
-                return new leave(lv.id, lv.datestart, lv.dateend, lv.reason, lv.approved, lv.employeeID)
-            })
+                response = { ...response, code: 200, message: { remainingLeaves } }
 
-            model.leaves = [...empLeaves]
+                return response as returnMessage
 
-            const remainingLeaves = model.getRemainingLeaves()
+            default:
+                break;
+        }
+    } catch (err) {
+        console.log("error: " + err);
 
-            return { remainingLeaves }
-
-        default:
-            break;
     }
+
 }

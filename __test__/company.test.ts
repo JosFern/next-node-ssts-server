@@ -1,7 +1,7 @@
 import { each, map } from "lodash";
+import { selectDB } from "../src/lib/database/query";
 import { company } from "../src/modules/company";
 import { companies } from "../_data_/companies";
-
 
 test("new company model", () => {
     const model = new company(undefined, "Lemondrop", 6, 30)
@@ -23,12 +23,51 @@ test('new company list', () => {
     })
 })
 
-test("update company", () => {
-    const model = new company(undefined, "Lemondrop", 6, 30)
+test('insert company to db and check if exist', async () => {
 
-    model.updateCompany("Workbean", 5, 25)
+    const id = '123-456-789'
+    const model = new company(id, "company1", 1, 5)
 
-    expect(model.getName()).toBe("Workbean")
-    expect(model.getAllotedLeaves()).toBe(5)
-    expect(model.getOvertimeLimit()).toBe(25)
+    const isExist = await selectDB("Company", `id='${id}'`)
+
+    if (isExist.length === 0) await model.insertData()
+
+    const comp = await selectDB("Company", `id='${id}'`)
+
+    expect(typeof comp[0].id).toBe("string")
+    expect(comp[0].name).toBe("company1")
+    expect(comp[0].allocateLeaves).toBe(1)
+    expect(comp[0].allocateOvertime).toBe(5)
+
+})
+
+test('update company in db and check if updated', async () => {
+    const id = '123-456-789'
+    const model = new company(id, "company1", 6, 30)
+
+    await model.updateData()
+
+    const comp = await selectDB("Company", `id='${id}'`)
+
+    expect(comp[0].id).toBe(id)
+    expect(comp[0].name).toBe("company1")
+    expect(comp[0].allocateLeaves).toBe(6)
+    expect(comp[0].allocateOvertime).toBe(30)
+
+    const reModel = new company(id, "company1", 1, 5)
+    await reModel.updateData() // get back to its original value from insert company test
+})
+
+test('delete company from db then check', async () => {
+
+    const id = '123-456-789'
+    const model = new company(id, "company1", 1, 5)
+
+    await model.deleteData()
+
+    const statement = `id='${id}'`
+
+    const isExist = await selectDB('Company', statement)
+
+    expect(isExist).toStrictEqual([])
 })

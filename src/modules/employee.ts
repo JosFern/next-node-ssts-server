@@ -47,6 +47,12 @@ export class employee extends dbOperations {
     private overtimes: overtime[] = []
     private absences: absence[] = []
 
+    getRate = () => this.rate
+
+    getType = () => this.empType
+
+    getPosition = () => this.pos
+
     getAssocCompany = async () => {
         // _.find(store.getCompanies(), (comp) => comp.id === this.companyID)
 

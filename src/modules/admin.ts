@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { dbOperations } from './dbOperations';
 
 export class admin extends dbOperations {
-    private readonly adminID: string
-    private readonly accountID: string
+    public readonly adminID: string
+    public readonly accountID: string
     private readonly TABLE: string = "Admin"
 
     constructor(

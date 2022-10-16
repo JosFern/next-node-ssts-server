@@ -1,65 +1,87 @@
-import { each, map } from "lodash";
-import { store } from "../src/modules/store";
 import { admin } from "../src/modules/admin";
-import { admins } from "../_data_/admin";
+import { account } from "../src/modules/account";
+import { v4 as uuidv4 } from 'uuid';
+import { selectDB } from "../src/lib/database/query";
 
 
 test("new admin model", () => {
-    const model = new admin(undefined, "Admin", "Admin", "admin@gmail.com", "admin123", "admin", undefined)
 
-    expect(typeof model.accountID).toBe("string")
-    expect(model.getFirstName()).toBe("Admin")
-    expect(model.getLastName()).toBe("Admin")
-    expect(model.getEmail()).toBe("admin@gmail.com")
-    expect(model.getPassword()).toBe("admin123")
-    expect(model.role).toBe("admin")
+    const accountID = uuidv4()
+    const model = new admin(undefined, accountID)
+
     expect(typeof model.adminID).toBe("string")
+    expect(model.accountID).toBe(accountID)
 })
 
-test("new admin list", () => {
+test("adding admin to db and check", async () => {
 
-    const models = map(admins, (data) => new admin(
-        undefined,
-        data.firstname,
-        data.lastname,
-        data.email,
-        data.password,
-        "admin",
-        undefined,
-    ))
+    const accountID = "qwe-asd-zxc"
+    const adminID = "zxc-asd-qwe"
 
-    each(admins, (data, index) => {
-        expect(typeof models[index].accountID).toBe("string")
-        expect(models[index].getFirstName()).toBe(data.firstname)
-        expect(models[index].getLastName()).toBe(data.lastname)
-        expect(models[index].getEmail()).toBe(data.email)
-        expect(models[index].role).toBe("admin")
-        expect(models[index].getPassword()).toBe(data.password)
-        expect(typeof models[index].adminID).toBe("string")
-    })
+    const adminModel = new admin(adminID, accountID)
+    const accountModel = new account(accountID, "Admin", "mindA", "adminSample@gmail.com", "admin123", "admin")
+
+    const isExist = await selectDB('Account', `email='${accountModel.getEmail()}'`)
+
+    if (isExist.length === 0) {
+        await adminModel.insertData()
+        await accountModel.insertData()
+    }
+
+    const adminSelect = await selectDB('Admin', `adminID='${adminID}'`)
+    const accountSelect = await selectDB('Account', `accountID='${adminSelect[0].accountID}'`)
+
+    if (adminSelect.length === 0) {
+        expect(adminSelect).toStrictEqual([])
+    } else {
+        expect(typeof adminSelect[0].adminID).toBe("string")
+        expect(adminSelect[0].accountID).toBe(accountID)
+        expect(accountSelect[0].accountID).toBe(accountID)
+        expect(accountSelect[0].firstname).toBe("Admin")
+        expect(accountSelect[0].lastname).toBe("mindA")
+        expect(accountSelect[0].email).toBe("adminSample@gmail.com")
+        expect(accountSelect[0].password).toBe("admin123")
+        expect(accountSelect[0].role).toBe("admin")
+    }
+
 })
 
-test("update admin account", () => {
+test('update admin account in db and check', async () => {
 
-    const model = new admin(
-        undefined,
-        "John",
-        "Doe",
-        "john@gmail.com",
-        "123123123",
-        "admin",
-        undefined,
-    )
+    const accountID = "qwe-asd-zxc"
+    const adminID = "zxc-asd-qwe"
 
-    model.updateAccount({
-        firstname: "Johnny",
-        lastname: "Does",
-        email: "johnny@gmail.com",
-        password: "johnny123"
-    })
+    const accountModel = new account(accountID, "Admin123", "mindA123", "adminSample@gmail.com", "administrator", "admin")
 
-    expect(model.getFirstName()).toBe("Johnny")
-    expect(model.getLastName()).toBe("Does")
-    expect(model.getEmail()).toBe("johnny@gmail.com")
-    expect(model.getPassword()).toBe("johnny123")
+    await accountModel.updateData()
+
+    const adminSelect = await selectDB('Admin', `adminID='${adminID}'`)
+    const accountSelect = await selectDB('Account', `accountID='${adminSelect[0].accountID}'`)
+
+    expect(typeof accountSelect[0].accountID).toBe("string")
+    expect(accountSelect[0].firstname).toBe("Admin123")
+    expect(accountSelect[0].lastname).toBe("mindA123")
+    expect(accountSelect[0].email).toBe("adminSample@gmail.com")
+    expect(accountSelect[0].password).toBe("administrator")
+    expect(accountSelect[0].role).toBe("admin")
+
+    const reModel = new account(accountID, "Admin", "mindA", "adminSample@gmail.com", "admin123", "admin")
+    await reModel.updateData() // get back to its original value from insert admin test
+})
+
+test('delete admin data from db and check', async () => {
+    const accountID = "qwe-asd-zxc"
+    const adminID = "zxc-asd-qwe"
+
+    const adminModel = new admin(adminID, accountID)
+    const accountModel = new account(accountID, "Admin", "mindA", "adminSample@gmail.com", "admin123", "admin")
+
+    await adminModel.deleteData()
+    await accountModel.deleteData()
+
+    const isAdminExist = await selectDB('Admin', `adminID='${adminID}'`)
+    const isAccountExist = await selectDB('Account', `accountID='${accountID}'`)
+
+    expect(isAdminExist).toStrictEqual([])
+    expect(isAccountExist).toStrictEqual([])
 })

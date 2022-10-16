@@ -1,7 +1,7 @@
 import { each, map } from "lodash";
-import { store } from "../src/modules/store";
 import { account } from "../src/modules/account";
 import { accounts } from "../_data_/accounts";
+import { selectDB } from "../src/lib/database/query";
 
 
 test("new account model", () => {
@@ -36,39 +36,60 @@ test("new account list", () => {
     })
 })
 
-test("update account account", () => {
+test('add account to db and check', async () => {
 
-    const model = new account(undefined, "Ayato", "Kamisato", "ayato@gmail.com", "ayato123", "admin")
+    const accountID = "poi-lkj-mnb"
 
-    model.updateAccount({
-        firstname: "Ayaka",
-        lastname: "Kamisato",
-        email: "ayaka@gmail.com",
-        password: "ayaka123"
-    })
+    const accountModel = new account(accountID, "Account", "tnuoccA", "accountSample@gmail.com", "account123", "admin")
 
-    expect(model.getFirstName()).toBe("Ayaka")
-    expect(model.getLastName()).toBe("Kamisato")
-    expect(model.getEmail()).toBe("ayaka@gmail.com")
-    expect(model.getPassword()).toBe("ayaka123")
+    const isExist = await selectDB('Account', `email='${accountModel.getEmail()}'`)
+
+    if (isExist.length === 0) await accountModel.insertData()
+
+    const accountSelect = await selectDB('Account', `accountID='${accountID}'`)
+
+    if (accountSelect.length === 0) {
+        expect(accountSelect).toStrictEqual([])
+    } else {
+        expect(accountSelect[0].accountID).toBe(accountID)
+        expect(accountSelect[0].firstname).toBe("Account")
+        expect(accountSelect[0].lastname).toBe("tnuoccA")
+        expect(accountSelect[0].email).toBe("accountSample@gmail.com")
+        expect(accountSelect[0].password).toBe("account123")
+        expect(accountSelect[0].role).toBe("admin")
+    }
 })
 
-test("login account retrieve", () => {
+test('update account in db and check', async () => {
 
-    each(accounts, (data) => {
-        store.postAccount(data)
-    })
+    const accountID = "poi-lkj-mnb"
 
-    const loginData = { email: "ayato@gmail.com", password: "ayato123" }
+    const accountModel = new account(accountID, "Account123", "tnuoccA321", "accountSample@gmail.com", "accountSample123", "admin")
 
-    const acc: account | string = store.loginAccount(loginData)
+    await accountModel.updateData()
 
-    if (typeof acc === "string") {
-        expect(acc).toBe("email and password invalid")
-    } else {
-        expect(acc.getEmail()).toBe("ayato@gmail.com")
-        expect(acc.getPassword()).toBe("ayato123")
-    }
+    const accountSelect = await selectDB('Account', `accountID='${accountID}'`)
 
+    expect(typeof accountSelect[0].accountID).toBe("string")
+    expect(accountSelect[0].firstname).toBe("Account123")
+    expect(accountSelect[0].lastname).toBe("tnuoccA321")
+    expect(accountSelect[0].email).toBe("accountSample@gmail.com")
+    expect(accountSelect[0].password).toBe("accountSample123")
+    expect(accountSelect[0].role).toBe("admin")
 
+    const reModel = new account(accountID, "Account", "tnuoccA", "accountSample@gmail.com", "account123", "admin")
+    await reModel.updateData() // get back to its original value from insert admin test
+})
+
+test('delete account data from db and check', async () => {
+
+    const accountID = "poi-lkj-mnb"
+
+    const accountModel = new account(accountID, "Account", "tnuoccA", "accountSample@gmail.com", "account123", "admin")
+
+    await accountModel.deleteData()
+
+    const isAccountExist = await selectDB('Account', `accountID='${accountID}'`)
+
+    expect(isAccountExist).toStrictEqual([])
 })

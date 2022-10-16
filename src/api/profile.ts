@@ -1,6 +1,5 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
-import _ from 'lodash';
 import { account } from "../modules/account";
 import { selectDB } from "../lib/database/query";
 
@@ -48,13 +47,19 @@ export const accountRequest = async (req: IncomingMessage) => {
                 {
                     if (!getResult?.id) {
                         const accounts = await selectDB('Account')
-                        return accounts
+
+                        response = { ...response, message: accounts }
+
+                        return response as returnMessage
+
                     } else {
                         const account: any = await selectDB('Account', `accountID='${getResult.id}'`)
 
                         if (account.length === 0) return { code: 404, message: "Account not found" }
 
-                        return account[0]
+                        response = { ...response, message: account }
+
+                        return response as returnMessage
                     }
                 }
 

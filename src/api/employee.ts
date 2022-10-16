@@ -3,10 +3,8 @@ import { getJSONDataFromRequestStream, getPathParams } from "../util/generatePar
 import { find, map } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { employee } from "../modules/employee";
-import { deleteDB, selectDB } from "../lib/database/query";
+import { selectDB } from "../lib/database/query";
 import { account } from "../modules/account";
-import { document } from "../lib/database/document";
-import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 interface returnMessage {
     code: number

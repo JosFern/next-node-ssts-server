@@ -28,7 +28,7 @@ const params = {
         ReadCapacityUnits: 1,
         WriteCapacityUnits: 1,
     },
-    TableName: "Company", //TABLE_NAME
+    TableName: "TestCompany", //TABLE_NAME
     StreamSpecification: {
         StreamEnabled: false,
     }

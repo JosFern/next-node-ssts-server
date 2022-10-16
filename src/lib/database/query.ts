@@ -5,10 +5,7 @@ import { dataToItem, itemToData } from "dynamo-converters";
 
 export const execute = async (params: any) => {
     try {
-        console.log(params);
-
         const valuesResponse = await document.send(new ExecuteStatementCommand(params));
-        console.log("Success");
         return valuesResponse;
     } catch (err) {
         console.error(err);

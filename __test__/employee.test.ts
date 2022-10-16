@@ -122,136 +122,200 @@ test('delete employee data from db and check', async () => {
 
 //--------------------------------COMPUTATIONS TESTS--------------------------
 
+//-----------------------------GENERATE DAILY WAGE TEST----------------------
 
-// //-----------------------------GENERATE DAILY WAGE TEST----------------------
+test('check employee daily wage', async () => {
+    const accountID = "account-dailywage-123456"
+    const employeeID = "employee-dailywage-123456"
+    const companyID = '07ccb2ce-b318-4de4-bc53-45d14b2617fd' //workbean company data
 
-// test("generate daily wage", () => {
+    const employeeModel = new employee(employeeID, accountID, 3, "parttime", companyID, "developer")
 
-//     const comp = new company(undefined, "Lemondrop", 6, 30)
+    const isExist = await selectDB('Employee', `employeeID='${employeeID}'`)
 
-//     const model = new employee(undefined, "Jose", "Baisac", "jose@gmail.com", "123123123", "employee", undefined, 3, "parttime", comp.id, "developer")
+    if (isExist.length === 0) await employeeModel.insertData()
 
-//     expect(model.getDailyWage()).toBe(12)
-// })
+    const dailyWage = employeeModel.getDailyWage()
 
-// //-----------------------------GENERATE REMAINING LEAVES TEST----------------------
+    expect(dailyWage).toBe(12)
 
-// test("generate remaining leaves", () => {
+    await employeeModel.deleteData()
 
-//     const compid = uuidv4()
+})
 
-//     store.postCompany({
-//         companyID: compid,
-//         name: "Lemondrop",
-//         allotedleaves: 6,
-//         overtimelimit: 30
-//     })
+//-----------------------------GENERATE REMAINING LEAVES TEST----------------------
 
-//     const model = new employee(undefined, "Jose", "Baisac", "jose@gmail.com", "123123123", "employee", undefined, 3, "parttime", compid, "developer")
+test('request leave and check remaining leave', async () => {
+    const accountID = "account-leave-123456"
+    const employeeID = "employee-leave-123456"
+    const companyID = '07ccb2ce-b318-4de4-bc53-45d14b2617fd' //workbean company data
 
-//     each(leaves, (data) => {
-//         const lv = new leave(data.datestart, data.dateend, data.reason, data.approved)
-//         model.postLeave(lv)
-//     })
+    const employeeModel = new employee(employeeID, accountID, 3, "parttime", companyID, "developer")
+    const accountModel = new account(accountID, "Employee", "eeyolpmE", "employeeLeave@gmail.com", "employee123", "employee")
 
-//     //expect 1 total leaves remaining
+    const isExist = await selectDB('Account', `email='${accountModel.getEmail()}'`)
 
-//     expect(model.getRemainingLeaves()).toBe(1)
-// })
+    if (isExist.length === 0) {
+        await employeeModel.insertData()
+        await accountModel.insertData()
+    }
 
-// //-----------------------------GENERATE TOTAL ABSENCES TEST----------------------
+    const leaveID = 'leave-123456'
+    const leaveModel = new leave(leaveID, "2022-10-05T14:00:00+08:00", "2022-10-08T14:00:00+08:00", "emergency", true, employeeID)
 
-// test("generate total absences", () => {
+    const leaveIDExist = await selectDB('Leave', `id='${leaveID}'`)
 
-//     const compid = uuidv4()
+    if (leaveIDExist.length === 0) {
+        await leaveModel.insertData()
+    }
 
-//     store.postCompany({
-//         companyID: compid,
-//         name: "Lemondrop",
-//         allotedleaves: 6,
-//         overtimelimit: 30
-//     })
+    const remainingLeaves = await employeeModel.getRemainingLeaves()
 
-//     const model = new employee(undefined, "Jose", "Baisac", "jose@gmail.com", "123123123", "employee", undefined, 3, "parttime", compid, "developer")
+    expect(remainingLeaves).toBe(2)
 
-//     each(absences, (data) => {
-//         const abs = new absence(data.datestart, data.dateend)
-//         model.postAbsence(abs)
-//     })
+    await leaveModel.deleteData()
+    await employeeModel.deleteData()
+    await accountModel.deleteData()
 
-//     //expect 4 total absences
+})
 
-//     expect(model.getTotalAbsences()).toBe(4)
-// })
+//-----------------------------GENERATE TOTAL OVERTIMES TEST----------------------
 
-// //-----------------------------GENERATE TOTAL OVERTIMES TEST----------------------
+test('request overtime and check total overtimes', async () => {
+    const accountID = "account-ot-123456"
+    const employeeID = "employee-ot-123456"
+    const companyID = '07ccb2ce-b318-4de4-bc53-45d14b2617fd' //workbean company data
 
-// test("generate total overtime", () => {
-//     const compid = uuidv4()
+    const employeeModel = new employee(employeeID, accountID, 3, "parttime", companyID, "developer")
+    const accountModel = new account(accountID, "Employee", "eeyolpmE", "employeeOvertime@gmail.com", "employee123", "employee")
 
-//     store.postCompany({
-//         companyID: compid,
-//         name: "Lemondrop",
-//         allotedleaves: 6,
-//         overtimelimit: 30
-//     })
+    const isExist = await selectDB('Account', `email='${accountModel.getEmail()}'`)
 
-//     const model = new employee(undefined, "Jose", "Baisac", "jose@gmail.com", "123123123", "employee", undefined, 3, "parttime", compid, "developer")
+    if (isExist.length === 0) {
+        await employeeModel.insertData()
+        await accountModel.insertData()
+    }
 
-//     each(overtimes, (data) => {
-//         const ot = new overtime(
-//             data.datehappen,
-//             data.timestart,
-//             data.timeend,
-//             data.reason,
-//             data.approved
-//         )
-//         model.postOvertime(ot)
-//     })
+    const otID = 'ot-123456'
+    const otModel = new overtime(otID, "2022-10-09T14:00:00+08:00", "2022-10-09T14:00:00+08:00", "2022-10-09T18:00:00+08:00", "maintenance", true, employeeID)
 
-//     //expect 8 total ot hours
+    const otIDExist = await selectDB('Overtime', `id='${otID}'`)
 
-//     expect(model.getTotalOvertime()).toBe(8)
-// })
+    if (otIDExist.length === 0) {
+        await otModel.insertData()
+    }
 
-// //-----------------------------GENERATE MONTHLY SALARY TEST----------------------
+    const totalOvertimes = await employeeModel.getTotalOvertime()
 
-// test("generate monthly salary", () => {
-//     const compid = uuidv4()
+    expect(totalOvertimes).toBe(4)
 
-//     store.postCompany({
-//         companyID: compid,
-//         name: "Lemondrop",
-//         allotedleaves: 6,
-//         overtimelimit: 30
-//     })
+    await otModel.deleteData()
+    await employeeModel.deleteData()
+    await accountModel.deleteData()
 
-//     const model = new employee(undefined, "Jose", "Baisac", "jose@gmail.com", "123123123", "employee", undefined, 3, "parttime", compid, "developer")
+})
 
-//     each(leaves, (data) => {
-//         const lv = new leave(data.datestart, data.dateend, data.reason, data.approved)
-//         model.postLeave(lv)
-//     })
+//-----------------------------GENERATE TOTAL ABSENCES TEST----------------------
+
+test('set employee absence and check total absences', async () => {
+    const accountID = "account-monthlySal-123456"
+    const employeeID = "employee-monthlySal-123456"
+    const companyID = '07ccb2ce-b318-4de4-bc53-45d14b2617fd' //workbean company data
+
+    const employeeModel = new employee(employeeID, accountID, 3, "parttime", companyID, "developer")
+
+    const isExist = await selectDB('Employee', `employeeID='${employeeID}'`)
+
+    if (isExist.length === 0) await employeeModel.insertData()
+
+    const absenceID = 'absence-123456'
+    const absenceModel = new absence(absenceID, "2022-10-26T14:00:00+08:00", "2022-10-27T14:00:00+08:00", employeeID)
+
+    const absenceIDExist = await selectDB('Absence', `id='${absenceID}'`)
+
+    if (absenceIDExist.length === 0) {
+        await absenceModel.insertData()
+    }
+
+    const totalAbsences = await employeeModel.getTotalAbsences()
+
+    expect(totalAbsences).toBe(2)
+
+    await absenceModel.deleteData()
+    await employeeModel.deleteData()
+
+})
+
+//-----------------------------GENERATE MONTHLY SALARY TEST----------------------
+
+test('set employee absence and check total absences', async () => {
+    const accountID = "account-monthlySal-123456"
+    const employeeID = "employee-monthlySal-123456"
+    const companyID = '07ccb2ce-b318-4de4-bc53-45d14b2617fd' //workbean company data
+
+    const employeeModel = new employee(employeeID, accountID, 3, "parttime", companyID, "developer")
+
+    const isExist = await selectDB('Employee', `employeeID='${employeeID}'`)
+
+    if (isExist.length === 0) await employeeModel.insertData()
 
 
-//     each(absences, (data) => {
-//         const abs = new absence(data.datestart, data.dateend)
-//         model.postAbsence(abs)
-//     })
+    //---------------------DAILY WAGE-----------------------
+    const dailyWage = employeeModel.getDailyWage()
+    //-------------------------------------------------------
 
-//     each(overtimes, (data) => {
-//         const ot = new overtime(
-//             data.datehappen,
-//             data.timestart,
-//             data.timeend,
-//             data.reason,
-//             data.approved
-//         )
-//         model.postOvertime(ot)
-//     })
+    //---------------------ADD LEAVES-----------------------
+    const leaveID = 'add-leave-123456'
+    const leaveModel = new leave(leaveID, "2022-10-05T14:00:00+08:00", "2022-10-08T14:00:00+08:00", "emergency", true, employeeID)
 
-//     //expect monthly salary of 213
+    const leaveIDExist = await selectDB('Leave', `id='${leaveID}'`)
 
-//     expect(model.getMonthlySalary()).toBe(213)
+    if (leaveIDExist.length === 0) {
+        await leaveModel.insertData()
+    }
 
-// })
+    const remainingLeaves = await employeeModel.getRemainingLeaves()
+    //-------------------------------------------------------
+
+    //---------------------ADD ABSENCE-----------------------
+    const otID = 'add-ot-123456'
+    const otModel = new overtime(otID, "2022-10-09T14:00:00+08:00", "2022-10-09T14:00:00+08:00", "2022-10-09T18:00:00+08:00", "maintenance", true, employeeID)
+
+    const otIDExist = await selectDB('Overtime', `id='${otID}'`)
+
+    if (otIDExist.length === 0) {
+        await otModel.insertData()
+    }
+
+    const totalOvertimes = await employeeModel.getTotalOvertime()
+    //-------------------------------------------------------
+
+
+    //---------------------ADD ABSENCE-----------------------
+    const absenceID = 'add-absence-123456'
+    const absenceModel = new absence(absenceID, "2022-10-26T14:00:00+08:00", "2022-10-27T14:00:00+08:00", employeeID)
+
+    const absenceIDExist = await selectDB('Absence', `id='${absenceID}'`)
+
+    if (absenceIDExist.length === 0) {
+        await absenceModel.insertData()
+    }
+
+    const totalAbsences = await employeeModel.getTotalAbsences()
+    //-------------------------------------------------------
+
+
+    const monthlySalary = await employeeModel.getMonthlySalary()
+
+    expect(dailyWage).toBe(12)
+    expect(remainingLeaves).toBe(2)
+    expect(totalOvertimes).toBe(4)
+    expect(totalAbsences).toBe(2)
+    expect(monthlySalary).toBe(245)
+
+    await employeeModel.deleteData()
+    await leaveModel.deleteData()
+    await otModel.deleteData()
+    await absenceModel.deleteData()
+
+})

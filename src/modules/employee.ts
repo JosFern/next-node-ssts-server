@@ -116,8 +116,6 @@ export class employee extends dbOperations {
 
         const assocCompany = await this.getAssocCompany()
 
-        console.log(assocCompany);
-
         return Math.max(assocCompany.allocateLeaves - getLeaves, 0)
     }
 
@@ -186,7 +184,7 @@ export class employee extends dbOperations {
 
         const monthSalary = (monthlyWage + (overtime + (this.rate * .2)) + bonusLeaveWages) - deductFromAbsences
 
-        console.log(dailywage, remainingleave, overtime, absences, monthlyWage, bonusLeaveWages, deductFromAbsences);
+        console.log(dailywage, remainingleave, overtime, absences, monthlyWage, (overtime + (this.rate * .2)), bonusLeaveWages, deductFromAbsences);
 
         return Math.round(monthSalary)
     }

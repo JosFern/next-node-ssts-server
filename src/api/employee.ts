@@ -124,7 +124,11 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
                         if (account.length === 0) return { code: 404, message: "Employee account not found" }
 
-                        response = { ...response, message: { ...employee[0], ...account[0] } }
+                        const company = await selectDB('Company', `id='${employee[0]?.companyID}'`)
+
+                        if (company.length === 0) return { code: 404, message: "Employee company not found" }
+
+                        response = { ...response, message: { ...employee[0], ...account[0], ...company[0] } }
 
                         return response as returnMessage
                     }
@@ -133,16 +137,35 @@ export const employeeRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
-                    const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
+                    const employeeInfo: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
-                    if (employee.length === 0) return { code: 404, message: "Employee not found" }
+                    if (employeeInfo.length === 0) return { code: 404, message: "Employee not found" }
 
-                    const account: object | any = await selectDB('Account', `accountID='${employee[0]?.accountID}'`)
+                    const accountInfo: object | any = await selectDB('Account', `accountID='${employeeInfo[0]?.accountID}'`)
 
-                    if (account.length === 0) return { code: 404, message: "Employee account not found" }
+                    if (accountInfo.length === 0) return { code: 404, message: "Employee account not found" }
 
-                    deleteDB('Employee', getResult.id, "employeeID", "accountID", account[0].accountID)
-                    deleteDB("Account", account[0].accountID, "accountID", "email", account[0].email)
+                    const employeeModel = new employee(
+                        getResult.id,
+                        employeeInfo[0].accountID,
+                        employeeInfo[0].rate,
+                        employeeInfo[0].empType,
+                        employeeInfo[0].companyID,
+                        employeeInfo[0].pos
+                    )
+
+                    const accountModel = new account(
+                        employeeInfo[0].accountID,
+                        accountInfo[0].firstname,
+                        accountInfo[0].lastname,
+                        accountInfo[0].email,
+                        accountInfo[0].password,
+                        "employee"
+                    )
+
+                    await employeeModel.deleteData()
+
+                    await accountModel.deleteData()
 
                     response = { ...response, message: "Employee successfully deleted" }
 

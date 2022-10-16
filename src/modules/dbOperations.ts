@@ -1,5 +1,5 @@
 import { assign, chain, keys, map, values } from "lodash"
-import { getTableSchema, insertDB, updateDB } from "../lib/database/query"
+import { deleteDB, getTableSchema, insertDB, updateDB } from "../lib/database/query"
 
 interface keySchema {
     AttributeName: string
@@ -72,5 +72,23 @@ export abstract class dbOperations {
             console.error(err)
             throw new Error("Unable to update");
         }
+    }
+
+    deleteData = async () => {
+        const { TABLE } = this.data
+
+        const schemas: keySchema[] | any = await getTableSchema(TABLE)
+
+        const whereFormat = chain(schemas)
+            .map(schema => values(schema)[0])
+            .map(key => ` ${key}='${this.data[key]}'`)
+            .value()
+
+        try {
+            await deleteDB(TABLE, whereFormat.join(" AND "))
+        } catch (err) {
+            console.log("Unable to delete");
+        }
+
     }
 }

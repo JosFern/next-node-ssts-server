@@ -106,16 +106,32 @@ export const employerRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
-                    const employer: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
+                    const employerInfo: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
 
-                    if (employer.length === 0) return { code: 404, message: "Employer not found" }
+                    if (employerInfo.length === 0) return { code: 404, message: "Employer not found" }
 
-                    const account: object | any = await selectDB('Account', `accountID='${employer[0]?.accountID}'`)
+                    const accountInfo: object | any = await selectDB('Account', `accountID='${employerInfo[0]?.accountID}'`)
 
-                    if (account.length === 0) return { code: 404, message: "Employer account not found" }
+                    if (accountInfo.length === 0) return { code: 404, message: "Employer account not found" }
 
-                    deleteDB("Account", getResult.id, "accountID", "email", account[0].email)
-                    deleteDB('Employer', getResult.id, "employerID", "accountID", account[0].accountID)
+                    const employerModel = new employer(
+                        getResult.id,
+                        employerInfo[0].accountID,
+                        employerInfo[0].companyID
+                    )
+
+                    const accountModel = new account(
+                        employerInfo[0].accountID,
+                        accountInfo[0].firstname,
+                        accountInfo[0].lastname,
+                        accountInfo[0].email,
+                        accountInfo[0].password,
+                        "employer"
+                    )
+
+                    await employerModel.deleteData()
+
+                    await accountModel.deleteData()
 
                     response = { ...response, message: "Employer successfully deleted" }
 

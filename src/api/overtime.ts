@@ -87,11 +87,21 @@ export const overtimeRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
-                    const overtime: any = await selectDB("Overtime", `id='${getResult.id}'`)
+                    const overtimeInfo: any = await selectDB("Overtime", `id='${getResult.id}'`)
 
-                    if (overtime.length === 0) return { code: 404, message: "Overtime not found" }
+                    if (overtimeInfo.length === 0) return { code: 404, message: "Overtime not found" }
 
-                    await deleteDB("Overtime", getResult.id, "id", "dateHappen", overtime[0].dateHappen)
+                    const otModel = new overtime(
+                        getResult.id,
+                        overtimeInfo[0].dateHappen,
+                        overtimeInfo[0].timeStart,
+                        overtimeInfo[0].timeEnd,
+                        overtimeInfo[0].reason,
+                        overtimeInfo[0].approved,
+                        overtimeInfo[0].employeeID,
+                    )
+
+                    await otModel.deleteData()
 
                     response = { ...response, message: "Overtime successfully deleted" }
 

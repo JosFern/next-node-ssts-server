@@ -85,7 +85,20 @@ export const leaveRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
-                    deleteDB("Leave", getResult.id, "id")
+                    const leaveInfo: object | any = await selectDB('Leave', `id='${getResult.id}'`)
+
+                    if (leaveInfo.length === 0) return { code: 404, message: "leave not found" }
+
+                    const leaveModel = new leave(
+                        getResult.id,
+                        leaveInfo[0].datestart,
+                        leaveInfo[0].dateend,
+                        leaveInfo[0].reason,
+                        leaveInfo[0].approved,
+                        leaveInfo[0].employeeID,
+                    )
+
+                    leaveModel.deleteData()
 
                     response = { ...response, message: "Leave successfully deleted" }
 

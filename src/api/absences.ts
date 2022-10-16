@@ -53,7 +53,18 @@ export const absenceRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
-                    deleteDB("Absence", getResult.id, "id")
+                    const absentInfo: any = await selectDB("Absence", `id='${getResult.id}'`)
+
+                    if (absentInfo.length === 0) return { code: 404, message: "Absence not found" }
+
+                    const otModel = new absence(
+                        getResult.id,
+                        absentInfo[0].dateStart,
+                        absentInfo[0].dateEnd,
+                        absentInfo[0].employeeID,
+                    )
+
+                    await otModel.deleteData()
 
                     response = { ...response, message: "Absence successfully deleted" }
 

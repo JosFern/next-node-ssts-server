@@ -43,16 +43,16 @@ export const updateDB = async (tableName: string, statement: string, parameters:
     return "Successfully Update"
 };
 
-export const deleteDB = async (tableName: string, id: string, idAttribute: string, sortAttribute: string = '', sortValue: string = '') => {
+export const deleteDB = async (tableName: string, where: string) => {
 
-    const query = sortAttribute.length > 0 ?
-        `DELETE FROM ${tableName} WHERE ${idAttribute}='${id}' AND ${sortAttribute}='${sortValue}'` : `DELETE FROM ${tableName} WHERE ${idAttribute}='${id}'`
+    const query = `DELETE FROM ${tableName} WHERE ${where}`
 
     const params = {
         Statement: query
     }
 
     await execute(params)
+    return "Successfully Deleted"
 }
 
 export const getTableSchema = async (table: string) => {

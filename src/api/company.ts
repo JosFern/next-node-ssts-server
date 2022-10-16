@@ -31,11 +31,7 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                     if (isExist.length > 0) return { ...response, code: 409, message: "Company name already exist" } as returnMessage
 
-                    const id = uuidv4()
-
-                    const sliceID = slice(id, 0, 13).join("")
-
-                    const model = new company(sliceID, name, allotedleaves, overtimelimit)
+                    const model = new company(undefined, name, allotedleaves, overtimelimit)
 
                     await model.insertData()
 
@@ -86,11 +82,18 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
-                    const company: object | any = await selectDB('Company', `id='${result.id}'`)
+                    const companyInfo: object | any = await selectDB('Company', `id='${result.id}'`)
 
-                    if (company.length === 0) return { code: 404, message: "Company not found" }
+                    if (companyInfo.length === 0) return { code: 404, message: "Company not found" }
 
-                    deleteDB("Company", result.id, "id", "name", company[0].name)
+                    const model = new company(
+                        result.id,
+                        companyInfo[0].name,
+                        companyInfo[0].allocateLeaves,
+                        companyInfo[0].allocateOvertime,
+                    )
+
+                    model.deleteData()
 
                     response = { ...response, message: "Company successfully deleted" }
 

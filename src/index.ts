@@ -18,10 +18,23 @@ interface returnMessage {
     message: string | any
 }
 
+const headers = {
+    'Access-Control-Allow-Origin': 'http://localhost:8080',
+    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET, PUT, DELETE',
+    'Access-Control-Max-Age': 2592000, // 30 days
+    'Content-Type': 'application/json'
+}
+
 const listener = async (req: IncomingMessage, res: ServerResponse) => {
     try {
 
         let result: returnMessage | any = { code: 200, message: "success" }
+
+        if (req.method === "OPTIONS") {
+            res.writeHead(204, headers);
+            res.end();
+            return;
+        }
 
         if ((req.url as string).match('/company(.*?)')) {
 
@@ -92,7 +105,7 @@ const listener = async (req: IncomingMessage, res: ServerResponse) => {
             console.log(JSON.stringify(result));
         }
 
-        res.writeHead(result.code, { 'Content-Type': 'application/json' })
+        res.writeHead(result.code, headers)
         res.end(JSON.stringify(result.message))
 
     } catch (error) {

@@ -26,7 +26,7 @@ export const loginRequest = async (req: IncomingMessage) => {
 
                     const account = await selectDB('Account', statement)
 
-                    if (account.length > 0) return { ...response, code: 400, message: "Account doesn't exist" } as returnMessage
+                    if (account.length === 0) return { ...response, code: 400, message: "Account doesn't exist" } as returnMessage
 
                     if (account[0].password !== password) return { ...response, code: 400, message: "Password is invalid" } as returnMessage
 

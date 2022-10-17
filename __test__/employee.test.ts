@@ -277,7 +277,7 @@ test('set employee absence and check total absences', async () => {
     const remainingLeaves = await employeeModel.getRemainingLeaves()
     //-------------------------------------------------------
 
-    //---------------------ADD ABSENCE-----------------------
+    //---------------------ADD OVERTIME-----------------------
     const otID = 'add-ot-123456'
     const otModel = new overtime(otID, "2022-10-09T14:00:00+08:00", "2022-10-09T14:00:00+08:00", "2022-10-09T18:00:00+08:00", "maintenance", true, employeeID)
 

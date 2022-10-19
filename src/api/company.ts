@@ -4,6 +4,7 @@ import { company } from "../modules/company";
 import { deleteDB, selectDB } from "../lib/database/query";
 import { slice } from "lodash";
 import { v4 as uuidv4 } from 'uuid';
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -59,6 +60,14 @@ export const companyRequest = async (req: IncomingMessage) => {
             case 'GET':
                 {
                     if (!result.id) {
+
+                        const getToken = req.headers.authorization
+
+                        const validateJwt = await validateToken(getToken, ['admin'])
+
+                        if (validateJwt === 401) return { code: 401, message: "not allowed" }
+
+                        if (validateJwt === 403) return { code: 403, message: "Forbidden" }
 
                         const listing = await selectDB('Company')
 

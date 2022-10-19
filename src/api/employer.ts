@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { employer } from "../modules/employer";
 import { deleteDB, selectDB } from "../lib/database/query";
 import { account } from "../modules/account";
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -73,6 +74,14 @@ export const employerRequest = async (req: IncomingMessage) => {
             case 'GET':
                 {
                     if (!getResult?.id) {
+
+                        const getToken = req.headers.authorization
+
+                        const validateJwt = await validateToken(getToken, ['admin'])
+
+                        if (validateJwt === 401) return { code: 401, message: "not allowed" }
+
+                        if (validateJwt === 403) return { code: 403, message: "Forbidden" }
 
                         const employers = await selectDB('Employer')
 

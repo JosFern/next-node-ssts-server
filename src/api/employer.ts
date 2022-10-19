@@ -78,9 +78,12 @@ export const employerRequest = async (req: IncomingMessage) => {
 
                         const accounts = await selectDB('Account')
 
+                        const companies = await selectDB('Company')
+
                         const employersInfo = map(employers, (emp) => {
                             const accInfo = find(accounts, { accountID: emp.accountID })
-                            return { ...emp, ...accInfo }
+                            const accCompInfo = find(companies, { id: emp.companyID })
+                            return { ...emp, ...accInfo, ...accCompInfo }
                         })
 
                         response = { ...response, message: employersInfo }

@@ -22,6 +22,14 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'POST':
                 {
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['admin'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const data: any = await getJSONDataFromRequestStream(req)
 
                     const { name, allotedleaves, overtimelimit } = data
@@ -43,6 +51,14 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'PUT':
                 {
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['admin'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const data: any = await getJSONDataFromRequestStream(req)
 
                     const { name, allotedleaves, overtimelimit } = data;
@@ -65,9 +81,9 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                         const validateJwt = await validateToken(getToken, ['admin'])
 
-                        if (validateJwt === 401) return { code: 401, message: "not allowed" }
+                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
 
-                        if (validateJwt === 403) return { code: 403, message: "Forbidden" }
+                        if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                         const listing = await selectDB('Company')
 
@@ -76,6 +92,14 @@ export const companyRequest = async (req: IncomingMessage) => {
                         return response
 
                     } else {
+
+                        const getToken = req.headers.authorization
+
+                        const validateJwt = await validateToken(getToken, ['admin', 'employee', 'employer'])
+
+                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                        if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                         const statement = `id='${result.id}'`
 
@@ -91,6 +115,14 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['admin'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const companyInfo: object | any = await selectDB('Company', `id='${result.id}'`)
 
                     if (companyInfo.length === 0) return { code: 404, message: "Company not found" }

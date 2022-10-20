@@ -3,6 +3,7 @@ import { getJSONDataFromRequestStream, getPathParams } from "../util/generatePar
 import _ from 'lodash';
 import { absence } from "../modules/absences";
 import { deleteDB, selectDB } from "../lib/database/query";
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -22,6 +23,14 @@ export const absenceRequest = async (req: IncomingMessage) => {
                 {
                     // FOR EMPLOYER SETTING AN ABSENCE TO EMPLOYEE
 
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const data: any = await getJSONDataFromRequestStream(req)
 
                     const { dateStart, dateEnd } = data
@@ -38,6 +47,14 @@ export const absenceRequest = async (req: IncomingMessage) => {
             case 'GET':
                 {
                     //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE ABSENCES
+
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee', 'employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                     const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 

@@ -3,6 +3,7 @@ import { getJSONDataFromRequestStream, getPathParams } from "../util/generatePar
 import _ from 'lodash';
 import { leave } from "../modules/leaves";
 import { deleteDB, selectDB, updateDB } from "../lib/database/query";
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -21,6 +22,14 @@ export const leaveRequest = async (req: IncomingMessage) => {
             case 'POST':
                 {
                     // FOR EMPLOYEE REQUESTING A LEAVE
+
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                     const data: object | any = await getJSONDataFromRequestStream(req)
 
@@ -44,6 +53,14 @@ export const leaveRequest = async (req: IncomingMessage) => {
             case 'PUT':
                 {
                     // FOR EMPLOYER TO APPROVE/DENY LEAVE REQUEST
+
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                     const data: object | any = await getJSONDataFromRequestStream(req)
 
@@ -71,6 +88,14 @@ export const leaveRequest = async (req: IncomingMessage) => {
                 {
                     //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE LEAVES
 
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee', 'employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                     if (employee.length === 0) return { code: 404, message: "Employee not found" }
@@ -85,6 +110,14 @@ export const leaveRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee', 'employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const leaveInfo: object | any = await selectDB('Leave', `id='${getResult.id}'`)
 
                     if (leaveInfo.length === 0) return { code: 404, message: "leave not found" }

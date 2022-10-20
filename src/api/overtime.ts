@@ -4,6 +4,7 @@ import { overtime } from "../modules/overtime";
 import { deleteDB, selectDB, updateDB } from "../lib/database/query";
 import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { document } from "../lib/database/document";
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -22,6 +23,14 @@ export const overtimeRequest = async (req: IncomingMessage) => {
             case 'POST':
                 {
                     // FOR EMPLOYEE REQUESTING AN OVERTIME
+
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                     const data: any = await getJSONDataFromRequestStream(req)
 
@@ -45,6 +54,14 @@ export const overtimeRequest = async (req: IncomingMessage) => {
             case 'PUT':
                 {
                     // FOR EMPLOYER TO APPROVE/DENY OVERTIME REQUEST
+
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                     const data: object | any = await getJSONDataFromRequestStream(req)
 
@@ -73,6 +90,14 @@ export const overtimeRequest = async (req: IncomingMessage) => {
                 {
                     //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
 
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee', 'employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                     if (employee.length === 0) return { code: 404, message: "Employee not found" }
@@ -87,6 +112,14 @@ export const overtimeRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee', 'employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const overtimeInfo: any = await selectDB("Overtime", `id='${getResult.id}'`)
 
                     if (overtimeInfo.length === 0) return { code: 404, message: "Overtime not found" }

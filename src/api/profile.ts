@@ -2,6 +2,7 @@ import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import { account } from "../modules/account";
 import { selectDB } from "../lib/database/query";
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -19,6 +20,14 @@ export const accountRequest = async (req: IncomingMessage) => {
 
             case 'PUT':
                 {
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employee', 'employer', 'admin'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                     const data: any = await getJSONDataFromRequestStream(req)
 
                     const { firstname, lastname, email, password, role } = data
@@ -46,6 +55,15 @@ export const accountRequest = async (req: IncomingMessage) => {
             case 'GET':
                 {
                     if (!getResult?.id) {
+
+                        const getToken = req.headers.authorization
+
+                        const validateJwt = await validateToken(getToken, ['admin'])
+
+                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                        if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                         const accounts = await selectDB('Account')
 
                         response = { ...response, message: accounts }
@@ -53,6 +71,14 @@ export const accountRequest = async (req: IncomingMessage) => {
                         return response as returnMessage
 
                     } else {
+                        const getToken = req.headers.authorization
+
+                        const validateJwt = await validateToken(getToken, ['employee', 'employer', 'admin'])
+
+                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                        if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
                         const account: any = await selectDB('Account', `accountID='${getResult.id}'`)
 
                         if (account.length === 0) return { code: 404, message: "Account not found" }

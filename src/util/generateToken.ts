@@ -1,4 +1,7 @@
 import * as jose from 'jose'
+import * as dotenv from 'dotenv';
+import { addHours, differenceInMinutes } from 'date-fns';
+dotenv.config()
 
 export const generateToken = async (account: any) => {
 
@@ -15,7 +18,7 @@ export const generateToken = async (account: any) => {
         .setIssuedAt()
         .setIssuer(`${email}`)
         .setAudience('urn:example:audience')
-        .setExpirationTime('2h')
+        .setExpirationTime(addHours(new Date(), 2).getTime())
         .sign(new TextEncoder().encode(process.env.SECRET_KEY))
 
     return jwt
@@ -34,7 +37,7 @@ export const decryptToken = (data: string) => {
 
 export const validateToken = async (token: any, roles: string[]) => {
 
-    // const { payload, protectedHeader } = await jose.jwtVerify(token, new TextEncoder().encode(process.env.SECRET_KEY), )
+    // const verification = await jose.jwtVerify(token, new TextEncoder().encode(process.env.SECRET_KEY),)
 
     if (token === undefined) return 401 //no token, not allowed
 
@@ -42,7 +45,11 @@ export const validateToken = async (token: any, roles: string[]) => {
 
     const claims: object | any = decryptToken(arrayToken[1])
 
-    const { role } = claims
+    const { role, exp } = claims
+
+    console.log(differenceInMinutes(new Date(exp), new Date()));
+
+    if (differenceInMinutes(new Date(exp), new Date()) <= 0) return 401//token expired, need login
 
     if (!roles.includes(role)) return 403 //forbidden, cannot access
 

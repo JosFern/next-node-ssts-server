@@ -2,6 +2,7 @@ import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import { selectDB } from "../lib/database/query";
 import { employee } from "../modules/employee";
+import { validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -20,6 +21,14 @@ export const remainingleave = async (req: IncomingMessage) => {
             case 'GET':
 
                 //FOR EMPLOYEE RETRIEVE REMAINING LEAVES
+
+                const getToken = req.headers.authorization
+
+                const validateJwt = await validateToken(getToken, ['employee', 'employer'])
+
+                if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                 const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 

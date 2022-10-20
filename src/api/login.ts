@@ -1,10 +1,7 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import { selectDB } from "../lib/database/query";
-import * as jose from 'jose'
-import * as dotenv from 'dotenv';
 import { decryptToken, generateToken } from "../util/generateToken";
-dotenv.config()
 
 interface returnMessage {
     code: number

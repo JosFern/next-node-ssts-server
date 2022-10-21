@@ -4,7 +4,7 @@ import { company } from "../modules/company";
 import { deleteDB, selectDB } from "../lib/database/query";
 import { slice } from "lodash";
 import { v4 as uuidv4 } from 'uuid';
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -22,24 +22,28 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'POST':
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
 
-                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //VALIDATE ENCRYPTED COMPANY DATA
                     const data: any = await getJSONDataFromRequestStream(req)
 
-                    const { name, allotedleaves, overtimelimit } = data
+                    const validateData = await validateToken(data)
 
+                    const { name, allotedleaves, overtimelimit } = validateData
+
+                    //QUERY COMPANY NAMES IF IT EXIST
                     const statement = `name='${name}'`
 
                     const isExist = await selectDB('Company', statement)
 
                     if (isExist.length > 0) return { ...response, code: 409, message: "Company name already exist" } as returnMessage
 
+                    //INSERTING THE NEW COMPANY DATA
                     const model = new company(undefined, name, allotedleaves, overtimelimit)
 
                     await model.insertData()
@@ -51,18 +55,28 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'PUT':
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
 
-                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //VALIDATE ENCRYPTED COMPANY DATA
                     const data: any = await getJSONDataFromRequestStream(req)
 
-                    const { name, allotedleaves, overtimelimit } = data;
+                    const validateData = await validateToken(data)
 
+                    const { name, allotedleaves, overtimelimit } = validateData;
+
+                    //QUERY IF COMPANY EXIST
+                    const statement = `id='${result.id}'`
+
+                    const compInfo: any = await selectDB("Company", statement)
+
+                    if (compInfo.length === 0) return { code: 404, message: "Company not found" }
+
+                    //UPDATING THE COMPANY DATA
                     const putModel = new company(result.id, name, allotedleaves, overtimelimit)
 
                     await putModel.updateData()
@@ -77,22 +91,26 @@ export const companyRequest = async (req: IncomingMessage) => {
                 {
                     if (!result.id) {
 
+                        // VALIDATE USER TOKEN
                         const getToken = req.headers.authorization
 
                         const validateJwt = await validateToken(getToken, ['admin'])
 
-                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                         if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                        //QUERY LIST OF ALL COMPANIES
                         const listing = await selectDB('Company')
 
-                        response = { ...response, message: listing }
+                        //ENCRYPT COMPANIES
+                        const jwt = await encryptToken(listing)
+
+                        response = { ...response, message: jwt }
 
                         return response
 
                     } else {
 
+                        // NOT YET FINISHED
                         const getToken = req.headers.authorization
 
                         const validateJwt = await validateToken(getToken, ['admin', 'employee', 'employer'])
@@ -115,6 +133,7 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
+                    // NOT YET FINISHED
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])

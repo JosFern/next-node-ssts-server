@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { employer } from "../modules/employer";
 import { deleteDB, selectDB } from "../lib/database/query";
 import { account } from "../modules/account";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -24,24 +24,28 @@ export const employerRequest = async (req: IncomingMessage) => {
 
             case 'POST':
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
 
-                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //VALIDATE ENCRYPTED EMPLOYER DATA
                     const data: any = await getJSONDataFromRequestStream(req)
 
-                    const { firstname, lastname, email, password, companyID } = data
+                    const validateData = await validateToken(data)
 
+                    const { firstname, lastname, email, password, companyID } = validateData
+
+                    //QUERY EMAILS IF IT EXIST
                     const statement = `email='${email}'`
 
                     const isExist = await selectDB('Account', statement)
 
                     if (isExist.length > 0) return { ...response, code: 409, message: "Email already exist" } as returnMessage
 
+                    //INSERTING NEW EMPLOYER DATA
                     const accountID = uuidv4()
 
                     const newEmployer = new employer(undefined, accountID, companyID)
@@ -59,24 +63,28 @@ export const employerRequest = async (req: IncomingMessage) => {
 
             case 'PUT':
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
 
-                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //VALIDATE ENCRYPTED EMPLOYER DATA
                     const data: any = await getJSONDataFromRequestStream(req)
 
-                    const { firstname, lastname, email, password } = data
+                    const validateData = await validateToken(data)
 
+                    const { firstname, lastname, email, password } = validateData
+
+                    //QUERY IF EMPLOYER EXIST
                     const statement = `employerID='${getResult.id}'`
 
                     const empInfo: any = await selectDB("Employer", statement)
 
                     if (empInfo.length === 0) return { code: 404, message: "Employer not found" }
 
+                    //UPDATING EMPLOYER DATA
                     const model = new account(empInfo[0].accountID, firstname, lastname, email, password, "employer")
 
                     await model.updateData()
@@ -90,14 +98,14 @@ export const employerRequest = async (req: IncomingMessage) => {
                 {
                     if (!getResult?.id) {
 
+                        // VALIDATE USER TOKEN
                         const getToken = req.headers.authorization
 
                         const validateJwt = await validateToken(getToken, ['admin'])
 
-                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                         if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                        //QUERY ALL EMPLOYER AND ASSOCIATED ACCOUNT & COMPANY
                         const employers = await selectDB('Employer')
 
                         const accounts = await selectDB('Account')
@@ -110,12 +118,16 @@ export const employerRequest = async (req: IncomingMessage) => {
                             return { ...emp, ...accInfo, ...accCompInfo }
                         })
 
-                        response = { ...response, message: employersInfo }
+                        //ENCRYPT EMPLOYERS
+                        const jwt = await encryptToken(employersInfo)
+
+                        response = { ...response, message: jwt }
 
                         return response
 
                     } else {
 
+                        //NOT YET FINISHED
                         const getToken = req.headers.authorization
 
                         const validateJwt = await validateToken(getToken, ['admin', 'employer'])
@@ -141,14 +153,14 @@ export const employerRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
 
-                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
-
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //QUERY EMPLOYER IF EXIST
                     const employerInfo: object | any = await selectDB('Employer', `employerID='${getResult.id}'`)
 
                     if (employerInfo.length === 0) return { code: 404, message: "Employer not found" }
@@ -157,6 +169,7 @@ export const employerRequest = async (req: IncomingMessage) => {
 
                     if (accountInfo.length === 0) return { code: 404, message: "Employer account not found" }
 
+                    //DELETING EMPLOYER
                     const employerModel = new employer(
                         getResult.id,
                         employerInfo[0].accountID,

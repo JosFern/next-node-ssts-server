@@ -1,5 +1,5 @@
 import { IncomingMessage } from "http";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 import { selectDB } from "../lib/database/query";
 import { employee } from "../modules/employee";
 import { getPathParams } from "../util/generateParams";
@@ -22,6 +22,7 @@ export const totalAbsencesRequest = async (req: IncomingMessage) => {
 
                 //FOR EMPLOYEE RETRIEVE TOTAL ABSENCES
 
+                // VALIDATE USER TOKEN
                 const getToken = req.headers.authorization
 
                 const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -30,6 +31,7 @@ export const totalAbsencesRequest = async (req: IncomingMessage) => {
 
                 if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                // QUERY EMPLOYEE
                 const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                 if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
@@ -43,9 +45,13 @@ export const totalAbsencesRequest = async (req: IncomingMessage) => {
                     getEmployee[0].pos,
                 )
 
-                const totalAbsence = await model.getTotalAbsences()
+                //GETTING EMPLOYEE TOTAL ABSENCES
+                const totalAbsences = await model.getTotalAbsences()
 
-                response = { ...response, code: 200, message: { totalAbsence } }
+                //ENCRYPT DATA
+                const jwt = await encryptToken({ totalAbsences })
+
+                response = { ...response, code: 200, message: jwt }
 
                 return response as returnMessage
 

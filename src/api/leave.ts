@@ -3,7 +3,7 @@ import { getJSONDataFromRequestStream, getPathParams } from "../util/generatePar
 import _ from 'lodash';
 import { leave } from "../modules/leaves";
 import { deleteDB, selectDB, updateDB } from "../lib/database/query";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -88,6 +88,7 @@ export const leaveRequest = async (req: IncomingMessage) => {
                 {
                     //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE LEAVES
 
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -96,13 +97,18 @@ export const leaveRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    // QUERY EMPLOYEE
                     const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                     if (employee.length === 0) return { code: 404, message: "Employee not found" }
 
+                    // QUERY EMPLOYEE LEAVES
                     const leaves = await selectDB('Leave', `employeeID='${getResult.id}'`)
 
-                    response = { ...response, message: leaves }
+                    //ENCRYPT DATA
+                    const jwt = await encryptToken(leaves)
+
+                    response = { ...response, message: jwt }
 
                     return response as returnMessage
                 }

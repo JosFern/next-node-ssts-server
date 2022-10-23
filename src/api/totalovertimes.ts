@@ -2,7 +2,7 @@ import { IncomingMessage } from "http";
 import { employee } from "../modules/employee";
 import { selectDB } from "../lib/database/query";
 import { getPathParams } from "../util/generateParams";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -22,6 +22,7 @@ export const totalOTRequest = async (req: IncomingMessage) => {
 
                 //FOR EMPLOYEE RETRIEVE TOTAL OVERTIME HOURS
 
+                // VALIDATE USER TOKEN
                 const getToken = req.headers.authorization
 
                 const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -30,6 +31,7 @@ export const totalOTRequest = async (req: IncomingMessage) => {
 
                 if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                // QUERY EMPLOYEE
                 const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                 if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
@@ -43,9 +45,13 @@ export const totalOTRequest = async (req: IncomingMessage) => {
                     getEmployee[0].pos,
                 )
 
+                //GETTING EMPLOYEE TOTAL OVERTIME HOURS
                 const totalOvertime = await model.getTotalOvertime()
 
-                response = { ...response, code: 200, message: { totalOvertime } }
+                //ENCRYPT DATA
+                const jwt = await encryptToken({ totalOvertime })
+
+                response = { ...response, code: 200, message: jwt }
 
                 return response as returnMessage
 

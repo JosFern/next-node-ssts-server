@@ -4,7 +4,7 @@ import { overtime } from "./overtime"
 import { chain, map } from 'lodash'
 import { v4 as uuidv4 } from 'uuid';
 import { differenceInDays, differenceInHours, isSameMonth, parseISO } from "date-fns"
-import { selectDB } from "../lib/database/query"
+import { deleteDB, selectDB } from "../lib/database/query"
 import { dbOperations } from "./dbOperations"
 
 export class employee extends dbOperations {
@@ -187,6 +187,26 @@ export class employee extends dbOperations {
         console.log(dailywage, remainingleave, overtime, absences, monthlyWage, (overtime + (this.rate * .2)), bonusLeaveWages, deductFromAbsences);
 
         return Math.round(monthSalary)
+    }
+
+    deleteEmployeeRecords = async () => {
+        const empLeaves = await selectDB('Leave', `employeeID='${this.employeeID}'`)
+
+        map(empLeaves, async (lv) => {
+            await deleteDB('Leave', `employeeID='${this.employeeID} AND id=${lv.id}'`)
+        })
+
+        const empOTs = await selectDB('Overtime', `employeeID='${this.employeeID}'`)
+
+        map(empOTs, async (ot) => {
+            await deleteDB('Overtime', `employeeID='${this.employeeID} AND id=${ot.id} AND dateHappen=${ot.dateHappen}'`)
+        })
+
+        const empAbsences = await selectDB('Absence', `employeeID='${this.employeeID}'`)
+
+        map(empAbsences, async (ab) => {
+            await deleteDB('Absence', `employeeID='${this.employeeID} AND id=${ab.id}'`)
+        })
     }
 
 

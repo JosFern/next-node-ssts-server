@@ -4,7 +4,7 @@ import { dbOperations } from './dbOperations';
 export class employer extends dbOperations {
     public readonly employerID: string;
     public readonly accountID: string
-    public companyID: string;
+    public readonly companyID: string;
     private readonly TABLE = 'Employer'
 
     constructor(

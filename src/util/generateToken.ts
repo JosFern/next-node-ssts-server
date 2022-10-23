@@ -5,30 +5,6 @@ import { createHmac, createPrivateKey, createSecretKey, KeyObject } from 'crypto
 dotenv.config()
 import jwt from 'jsonwebtoken';
 
-export const generateToken = async (account: any) => {
-
-    const { accountID, firstname, lastname, email, role } = account
-
-    const jwt = await new jose.SignJWT({
-        'accountID': accountID,
-        'firstname': firstname,
-        'lastname': lastname,
-        'email': email,
-        'role': role
-    })
-        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
-        .setIssuedAt(new Date().getTime())
-        .setIssuer('ssts')
-        .setAudience('ssts')
-        .setExpirationTime(addHours(new Date(), 2).getTime())
-        .sign(new TextEncoder().encode(process.env.NEXT_PUBLIC_SECRET_KEY))
-
-    console.log(jwt);
-
-
-    return jwt
-}
-
 export const encryptToken = async (data: object) => {
 
     const jwt = await new jose.SignJWT({ 'urn:example:claim': true, 'sub': JSON.stringify(data) })
@@ -42,20 +18,9 @@ export const encryptToken = async (data: object) => {
     return jwt
 }
 
-export const decryptToken = (data: string) => {
-    const claims = jose.decodeJwt(data)
-    // console.log(claims)
-
-    const protectedHeader = jose.decodeProtectedHeader(data)
-    // console.log(protectedHeader)
-
-    return claims
-
-}
-
 export const validateToken = async (token: any, roles: string[] = []) => {
 
-    if (token === undefined) return 401 //no token, not allowed
+    if (token === undefined || token === '') return 401 //no token, not allowed
 
     let getToken = token
 
@@ -84,6 +49,43 @@ export const validateToken = async (token: any, roles: string[] = []) => {
 
     return JSON.parse(payload.sub)
 }
+
+//------------------------------------------------------------------------------
+export const decryptToken = (data: string) => {
+    const claims = jose.decodeJwt(data)
+    // console.log(claims)
+
+    const protectedHeader = jose.decodeProtectedHeader(data)
+    // console.log(protectedHeader)
+
+    return claims
+
+}
+
+export const generateToken = async (account: any) => {
+
+    const { accountID, firstname, lastname, email, role } = account
+
+    const jwt = await new jose.SignJWT({
+        'accountID': accountID,
+        'firstname': firstname,
+        'lastname': lastname,
+        'email': email,
+        'role': role
+    })
+        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+        .setIssuedAt(new Date().getTime())
+        .setIssuer('ssts')
+        .setAudience('ssts')
+        .setExpirationTime(addHours(new Date(), 2).getTime())
+        .sign(new TextEncoder().encode(process.env.NEXT_PUBLIC_SECRET_KEY))
+
+    console.log(jwt);
+
+
+    return jwt
+}
+
 
 
 

@@ -27,6 +27,8 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                     const validateJwt = await validateToken(getToken, ['admin'])
 
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                     //VALIDATE ENCRYPTED COMPANY DATA
@@ -59,6 +61,8 @@ export const companyRequest = async (req: IncomingMessage) => {
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
@@ -96,6 +100,8 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                         const validateJwt = await validateToken(getToken, ['admin'])
 
+                        if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
                         if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
                         //QUERY LIST OF ALL COMPANIES
@@ -110,7 +116,7 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                     } else {
 
-                        // NOT YET FINISHED
+                        // NOT YET UPDATED
                         const getToken = req.headers.authorization
 
                         const validateJwt = await validateToken(getToken, ['admin', 'employee', 'employer'])
@@ -133,7 +139,7 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
-                    // NOT YET FINISHED
+                    // NOT YET UPDATED
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])

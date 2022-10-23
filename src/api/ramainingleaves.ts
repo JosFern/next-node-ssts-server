@@ -2,7 +2,7 @@ import { IncomingMessage } from "http";
 import { getPathParams } from "../util/generateParams";
 import { selectDB } from "../lib/database/query";
 import { employee } from "../modules/employee";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -22,6 +22,7 @@ export const remainingleave = async (req: IncomingMessage) => {
 
                 //FOR EMPLOYEE RETRIEVE REMAINING LEAVES
 
+                // VALIDATE USER TOKEN
                 const getToken = req.headers.authorization
 
                 const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -30,6 +31,7 @@ export const remainingleave = async (req: IncomingMessage) => {
 
                 if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                // QUERY EMPLOYEE
                 const getEmployee: any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                 if (getEmployee.length === 0) return { code: 404, message: "Employee not found" }
@@ -43,9 +45,13 @@ export const remainingleave = async (req: IncomingMessage) => {
                     getEmployee[0].pos,
                 )
 
+                //GETTING EMPLOYEE REMAINING LEAVES
                 const remainingLeaves = await model.getRemainingLeaves()
 
-                response = { ...response, code: 200, message: { remainingLeaves } }
+                //ENCRYPT DATA
+                const jwt = await encryptToken({ remainingLeaves })
+
+                response = { ...response, code: 200, message: jwt }
 
                 return response as returnMessage
 

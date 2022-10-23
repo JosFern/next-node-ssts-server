@@ -1,8 +1,7 @@
 import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import { selectDB } from "../lib/database/query";
-import { decryptToken, encryptToken, generateToken, validateToken } from "../util/generateToken";
-import * as jose from 'jose'
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number

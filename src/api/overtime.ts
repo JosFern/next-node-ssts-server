@@ -4,7 +4,7 @@ import { overtime } from "../modules/overtime";
 import { deleteDB, selectDB, updateDB } from "../lib/database/query";
 import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { document } from "../lib/database/document";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -90,6 +90,7 @@ export const overtimeRequest = async (req: IncomingMessage) => {
                 {
                     //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE OVERTIMES
 
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -98,13 +99,18 @@ export const overtimeRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    // QUERY EMPLOYEE
                     const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                     if (employee.length === 0) return { code: 404, message: "Employee not found" }
 
-                    const overtimes = await selectDB('Overtime')
+                    // QUERY EMPLOYEE OVERTIMES
+                    const overtimes = await selectDB('Overtime', `employeeID='${getResult.id}'`)
 
-                    response = { ...response, message: overtimes }
+                    //ENCRYPT DATA
+                    const jwt = await encryptToken(overtimes)
+
+                    response = { ...response, message: jwt }
 
                     return response as returnMessage
                 }

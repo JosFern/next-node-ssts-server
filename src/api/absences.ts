@@ -3,7 +3,7 @@ import { getJSONDataFromRequestStream, getPathParams } from "../util/generatePar
 import _ from 'lodash';
 import { absence } from "../modules/absences";
 import { deleteDB, selectDB } from "../lib/database/query";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -23,6 +23,7 @@ export const absenceRequest = async (req: IncomingMessage) => {
                 {
                     // FOR EMPLOYER SETTING AN ABSENCE TO EMPLOYEE
 
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employer'])
@@ -31,10 +32,14 @@ export const absenceRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //VALIDATE ENCRYPTED EMPLOYEE DATA
                     const data: any = await getJSONDataFromRequestStream(req)
 
-                    const { dateStart, dateEnd } = data
+                    const validateData = await validateToken(data)
 
+                    const { dateStart, dateEnd } = validateData
+
+                    //INSERTING NEW EMPLOYEE ABSENCE DATA
                     const model = new absence(undefined, dateStart, dateEnd, getResult.id)
 
                     model.insertData()
@@ -48,6 +53,7 @@ export const absenceRequest = async (req: IncomingMessage) => {
                 {
                     //FOR EMPLOYEE AND EMPLOYER RETRIEVING THE EMPLOYEE ABSENCES
 
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -56,13 +62,17 @@ export const absenceRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    // QUERY EMPLOYEE
                     const employee: object | any = await selectDB('Employee', `employeeID='${getResult.id}'`)
 
                     if (employee.length === 0) return { code: 404, message: "Employee not found" }
 
                     const absences = await selectDB('Absence', `employeeID='${getResult.id}'`)
 
-                    response = { ...response, message: absences }
+                    //ENCRYPT DATA
+                    const jwt = await encryptToken(absences)
+
+                    response = { ...response, message: jwt }
 
                     return response as returnMessage
                 }

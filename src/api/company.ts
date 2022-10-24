@@ -139,7 +139,7 @@ export const companyRequest = async (req: IncomingMessage) => {
 
             case 'DELETE':
                 {
-                    // NOT YET UPDATED
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['admin'])
@@ -148,10 +148,12 @@ export const companyRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //QUERY COMPANY IF EXIST
                     const companyInfo: object | any = await selectDB('Company', `id='${result.id}'`)
 
                     if (companyInfo.length === 0) return { code: 404, message: "Company not found" }
 
+                    //DELETING COMPANY
                     const model = new company(
                         result.id,
                         companyInfo[0].name,
@@ -159,7 +161,13 @@ export const companyRequest = async (req: IncomingMessage) => {
                         companyInfo[0].allocateOvertime,
                     )
 
-                    model.deleteData()
+                    console.log('deleting company assoc');
+
+                    await model.deleteAssociates()
+
+                    console.log('deleting company');
+
+                    await model.deleteData()
 
                     response = { ...response, message: "Company successfully deleted" }
 

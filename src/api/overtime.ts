@@ -24,6 +24,7 @@ export const overtimeRequest = async (req: IncomingMessage) => {
                 {
                     // FOR EMPLOYEE REQUESTING AN OVERTIME
 
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employee'])
@@ -32,15 +33,21 @@ export const overtimeRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    // VALIDATE ENCRYPTED OVERTIME DATA //must be employee id
                     const data: any = await getJSONDataFromRequestStream(req)
 
+                    const validateData = await validateToken(data)
+
+                    const { dateHappen, timeStart, timeEnd, reason } = validateData
+
+                    //INSERTING NEW OVERTIME REQUEST DATA
                     const newOT = new overtime(
                         undefined,
-                        data.dateHappen,
-                        data.timeStart,
-                        data.timeEnd,
-                        data.reason,
-                        data.approved,
+                        dateHappen,
+                        timeStart,
+                        timeEnd,
+                        reason,
+                        false,
                         getResult.id
                     )
 
@@ -55,6 +62,7 @@ export const overtimeRequest = async (req: IncomingMessage) => {
                 {
                     // FOR EMPLOYER TO APPROVE/DENY OVERTIME REQUEST
 
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employer'])
@@ -63,25 +71,32 @@ export const overtimeRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //VALIDATE ENCRYPTED OVERTIME DATA
                     const data: object | any = await getJSONDataFromRequestStream(req)
 
+                    const validateData = await validateToken(data)
+
+                    const { approved } = validateData
+
+                    //QUERY OVERTIME IF EXIST //must be overtime id
                     const getOvertime: any = await selectDB('Overtime', `id='${getResult.id}'`)
 
                     if (getOvertime.length === 0) return { code: 404, message: "Overtime not found" }
 
+                    //UPDATING OVERTIME
                     const model = new overtime(
                         getResult.id,
                         getOvertime[0].dateHappen,
                         getOvertime[0].timeStart,
                         getOvertime[0].timeEnd,
                         getOvertime[0].reason,
-                        data.approved,
+                        approved,
                         getOvertime[0].employeeID
                     )
 
                     model.updateData()
 
-                    response = { ...response, message: `Overtime ${data.approved ? "Approved" : "Denied"}` }
+                    response = { ...response, message: `Overtime ${approved ? "Approved" : "Denied"}` }
 
                     return response as returnMessage
                 }
@@ -118,6 +133,7 @@ export const overtimeRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -126,10 +142,12 @@ export const overtimeRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    //QUERY OVERTIME IF EXIST //must be overtime id
                     const overtimeInfo: any = await selectDB("Overtime", `id='${getResult.id}'`)
 
                     if (overtimeInfo.length === 0) return { code: 404, message: "Overtime not found" }
 
+                    //DELETING OVERTIME
                     const otModel = new overtime(
                         getResult.id,
                         overtimeInfo[0].dateHappen,

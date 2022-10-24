@@ -80,10 +80,21 @@ export const absenceRequest = async (req: IncomingMessage) => {
             case 'DELETE':
 
                 {
+                    // VALIDATE USER TOKEN
+                    const getToken = req.headers.authorization
+
+                    const validateJwt = await validateToken(getToken, ['employer'])
+
+                    if (validateJwt === 401) return { code: 401, message: "user not allowed" }
+
+                    if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
+
+                    //QUERY ABSENCE IF EXIST //must be absence id
                     const absentInfo: any = await selectDB("Absence", `id='${getResult.id}'`)
 
                     if (absentInfo.length === 0) return { code: 404, message: "Absence not found" }
 
+                    //DELETING ABSENCE
                     const otModel = new absence(
                         getResult.id,
                         absentInfo[0].dateStart,

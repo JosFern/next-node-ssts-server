@@ -2,7 +2,7 @@ import { IncomingMessage } from "http";
 import { getJSONDataFromRequestStream, getPathParams } from "../util/generateParams";
 import { account } from "../modules/account";
 import { selectDB } from "../lib/database/query";
-import { validateToken } from "../util/generateToken";
+import { encryptToken, validateToken } from "../util/generateToken";
 
 interface returnMessage {
     code: number
@@ -20,6 +20,7 @@ export const accountRequest = async (req: IncomingMessage) => {
 
             case 'PUT':
                 {
+                    // VALIDATE USER TOKEN
                     const getToken = req.headers.authorization
 
                     const validateJwt = await validateToken(getToken, ['employee', 'employer', 'admin'])
@@ -28,16 +29,23 @@ export const accountRequest = async (req: IncomingMessage) => {
 
                     if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
+                    const { accountID } = validateJwt
+
+                    //VALIDATE ENCRYPTED PROFILE DATA
                     const data: any = await getJSONDataFromRequestStream(req)
 
-                    const { firstname, lastname, email, password, role } = data
+                    const validateData = await validateToken(data)
 
-                    const acc: any = selectDB('Account', `accountID='${getResult.id}'`)
+                    const { firstname, lastname, email, password, role } = validateData
+
+                    //QUERY IF ACCOUNT EXIST
+                    const acc: any = selectDB('Account', `accountID='${accountID}'`)
 
                     if (acc.length === 0) return { code: 404, message: "Account not found" }
 
+                    //UPDATING THE ACCOUNT DATA
                     const model = new account(
-                        getResult.id,
+                        accountID,
                         firstname,
                         lastname,
                         email,
@@ -45,9 +53,17 @@ export const accountRequest = async (req: IncomingMessage) => {
                         role,
                     )
 
-                    model.updateData()
+                    await model.updateData()
 
-                    response = { ...response, message: "Profile successfully updated" }
+                    const statement = `email='${email}'`
+
+                    const accountInfo = await selectDB('Account', statement)
+
+                    if (accountInfo.length === 0) return { ...response, code: 400, message: "Account doesn't exist" } as returnMessage
+
+                    const jwt = await encryptToken(accountInfo[0])
+
+                    response = { ...response, message: jwt }
 
                     return response as returnMessage
                 }

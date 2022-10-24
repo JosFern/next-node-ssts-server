@@ -193,19 +193,19 @@ export class employee extends dbOperations {
         const empLeaves = await selectDB('Leave', `employeeID='${this.employeeID}'`)
 
         map(empLeaves, async (lv) => {
-            await deleteDB('Leave', `employeeID='${this.employeeID} AND id=${lv.id}'`)
+            await deleteDB('Leave', `employeeID='${this.employeeID}' AND id='${lv.id}'`)
         })
 
         const empOTs = await selectDB('Overtime', `employeeID='${this.employeeID}'`)
 
         map(empOTs, async (ot) => {
-            await deleteDB('Overtime', `employeeID='${this.employeeID} AND id=${ot.id} AND dateHappen=${ot.dateHappen}'`)
+            await deleteDB('Overtime', `employeeID='${this.employeeID}' AND id='${ot.id}' AND dateHappen='${ot.dateHappen}'`)
         })
 
         const empAbsences = await selectDB('Absence', `employeeID='${this.employeeID}'`)
 
         map(empAbsences, async (ab) => {
-            await deleteDB('Absence', `employeeID='${this.employeeID} AND id=${ab.id}'`)
+            await deleteDB('Absence', `employeeID='${this.employeeID}' AND id='${ab.id}'`)
         })
     }
 

@@ -143,7 +143,7 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
                     } else {
 
-                        //NOT YET FINISHED
+                        // VALIDATE USER TOKEN  //currently used for employee only
                         const getToken = req.headers.authorization
 
                         const validateJwt = await validateToken(getToken, ['employee', 'employer'])
@@ -152,7 +152,8 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
                         if (validateJwt === 403) return { code: 403, message: "privileges not valid" }
 
-                        const employee: object | any = await selectDB('Employee', `employeeID='${getResult?.id}'`)
+                        //QUERY EMPLOYER DATA //must use employee accountid
+                        const employee: object | any = await selectDB('Employee', `accountID='${getResult?.id}'`)
 
                         if (employee.length === 0) return { code: 404, message: "Employee not found" }
 
@@ -164,7 +165,10 @@ export const employeeRequest = async (req: IncomingMessage) => {
 
                         if (company.length === 0) return { code: 404, message: "Employee company not found" }
 
-                        response = { ...response, message: { ...employee[0], ...account[0], ...company[0] } }
+                        //ENCRYPT EMPLOYER
+                        const jwt = await encryptToken({ ...employee[0], ...account[0], ...company[0] })
+
+                        response = { ...response, message: jwt }
 
                         return response as returnMessage
                     }
